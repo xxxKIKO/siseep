@@ -32,6 +32,8 @@ apps/
     e2e/               Playwright (iPhone 12): Mongo en memoria + API compilada + vite preview
 packages/
   shared/              esquemas zod, tipos, enums (sección 4), colores, reglas CASL (defineAbilityFor)
+    src/grading/       MOTOR DE CÁLCULO (sección 5): funciones puras, sin Nest ni Mongo
+    test/fixtures/periodo1-5B.json  datos dorados del Excel (generado, no editar a mano)
   eslint-config/       ESLint compartido (base y react)
   tsconfig/            tsconfig base, nest, react y library
 scripts/dev.mjs        orquesta `pnpm dev` (Mongo + seed + api + web)
@@ -49,6 +51,7 @@ docs/                  plan.md (especificación) y deploy.md (staging)
 | `pnpm lint` / `pnpm typecheck` / `pnpm test` / `pnpm build` | Lo mismo que corre la CI                                                                                 |
 | `pnpm format`                                               | Prettier en todo el repo                                                                                 |
 | `pnpm --filter @siseep/api test`                            | Solo pruebas de la API                                                                                   |
+| `pnpm golden:build`                                         | Regenera las pruebas doradas del motor desde el fixture del Excel (`scripts/build-golden-fixture.ts`)    |
 | `pnpm test:e2e`                                             | Playwright en viewport de iPhone 12 (compila shared y api; usa tu Chrome local, en CI Chromium)          |
 
 - **Mongo local**: se usa el MongoDB que ya corre en `127.0.0.1:27017` (replica set `rs0`,
@@ -87,6 +90,13 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   actual). La web resuelve conflictos con "gana el servidor" y avisa.
 - **Notas de salud**: nunca visibles para padres. Usa `normalizeNoteVisibility` al guardar e
   `isNoteVisibleToGuardians` en cualquier lectura para padres (ambas en `packages/shared`).
+- **Motor de cálculo**: toda calificación de campo, redondeo, promedio general y "Ojo en" sale de
+  `packages/shared/src/grading` (`studentPeriodResult`). La API y la web nunca reimplementan
+  fórmulas ni usan aggregation pipelines para calcular. El redondeo usa `roundHalfUp`/`roundTo`
+  (aritmética decimal entera), nunca `Math.round` sobre el número de punto flotante.
+- **Resumen en vivo**: `SummaryService` con caché de 30 s por grupo y periodo (`SummaryCache`). Todo
+  lo que cambie promedios (calificaciones, actividades, importación) debe llamar
+  `summaryCache.invalidateGroup(groupId)`.
 - **PDF**: `PdfService` (puppeteer-core, una instancia, cola `PDF_CONCURRENCY`); plantillas en
   `src/reports/templates/*.html` con `{{clave}}` escapado por `renderTemplate`.
 - **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,
@@ -110,5 +120,7 @@ docs/                  plan.md (especificación) y deploy.md (staging)
 
 **Las pruebas de permisos y del motor de cálculo nunca se borran ni se saltan** (`.skip`, `.only`,
 `xit`, comentarios, umbrales relajados). Si una falla, se corrige el código, no la prueba. Estas
-pruebas están marcadas con el comentario `Permission tests: never delete or skip` (y, desde la
-etapa 3, las doradas del motor en `packages/shared`).
+pruebas están marcadas con el comentario `Permission tests: never delete or skip`, y las doradas
+del motor (`packages/shared/test/grading.test.ts`: las 80 calificaciones del Periodo I del 5°B contra
+el Excel) con `GOLDEN TESTS OF THE GRADING ENGINE`. Si el motor cambia y una dorada falla, el que
+está mal es el motor.

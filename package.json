@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "seed": "pnpm --filter @siseep/shared build && pnpm --filter @siseep/api seed",
-    "test:e2e": "pnpm --filter @siseep/shared build && pnpm --filter @siseep/api build && pnpm --filter @siseep/web test:e2e"
+    "test:e2e": "pnpm --filter @siseep/shared build && pnpm --filter @siseep/api build && pnpm --filter @siseep/web test:e2e",
+    "golden:build": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-golden-fixture.ts"
   },
   "devDependencies": {
     "mongodb-memory-server": "^10.4.3",

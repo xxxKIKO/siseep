@@ -7,7 +7,15 @@ import {
   FIELD_NAMES,
   type FieldKey,
 } from '@siseep/shared';
-import { ChevronRight, FileDown, LoaderCircle, MoreVertical, Plus, Trash2 } from 'lucide-react';
+import {
+  BarChart3,
+  ChevronRight,
+  FileDown,
+  LoaderCircle,
+  MoreVertical,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -88,6 +96,15 @@ export function TeacherGroupPage() {
         title={`Grupo ${g.name}`}
         description={`${period ? `${period.name}${period.status === 'OPEN' ? '' : ' (cerrado)'}` : 'Sin periodo'} · ${g.studentCount} alumnos${subject ? ` · ${SUBJECT_LABELS[subject]}` : ''}`}
         back={{ to: '/maestro', label: 'Mis grupos' }}
+        actions={
+          homeroom && period ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/maestro/grupos/${g.id}/resumen`}>
+                <BarChart3 aria-hidden /> Resumen
+              </Link>
+            </Button>
+          ) : null
+        }
       />
 
       <div

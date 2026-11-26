@@ -21,6 +21,7 @@ import type { GroupDocument } from '../groups/group.schema';
 import { GroupsService } from '../groups/groups.service';
 import { Period, type PeriodDocument } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
+import { SummaryCache } from '../summary/summary-cache.service';
 import { Activity, type ActivityDocument } from './activity.schema';
 import { Grade } from './grade.schema';
 
@@ -50,6 +51,7 @@ export class ActivitiesService {
     private readonly groups: GroupsService,
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
+    private readonly summaryCache: SummaryCache,
   ) {}
 
   // ---- reads -----------------------------------------------------------------
@@ -150,6 +152,7 @@ export class ActivitiesService {
         session,
       );
     });
+    this.summaryCache.invalidateGroup(group._id.toString());
     const [view] = await this.toViews([activity], group._id);
     return view!;
   }
@@ -197,6 +200,7 @@ export class ActivitiesService {
         session,
       );
     });
+    this.summaryCache.invalidateGroup(activity.groupId.toString());
     const [view] = await this.toViews([activity], activity.groupId);
     return view!;
   }
@@ -236,6 +240,7 @@ export class ActivitiesService {
         session,
       );
     });
+    this.summaryCache.invalidateGroup(activity.groupId.toString());
   }
 
   // ---- helpers -----------------------------------------------------------------

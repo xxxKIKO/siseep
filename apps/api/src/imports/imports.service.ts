@@ -25,6 +25,7 @@ import { Period, type PeriodDocument } from '../periods/period.schema';
 import { SchoolYear } from '../school-years/school-year.schema';
 import { Enrollment } from '../students/enrollment.schema';
 import { normalizeName, searchNameOf, Student } from '../students/student.schema';
+import { SummaryCache } from '../summary/summary-cache.service';
 import {
   type ParsedWorkbook,
   parseWorkbook,
@@ -55,6 +56,7 @@ export class ImportsService {
     @InjectModel(Grade.name) private readonly gradeModel: Model<Grade>,
     @InjectModel(PeriodResult.name) private readonly resultModel: Model<PeriodResult>,
     @InjectConnection() private readonly connection: Connection,
+    private readonly summaryCache: SummaryCache,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -302,6 +304,7 @@ export class ImportsService {
       preview.committedAt = new Date();
       await preview.save({ session });
     });
+    this.summaryCache.invalidateGroup(group._id.toString());
     return result;
   }
 

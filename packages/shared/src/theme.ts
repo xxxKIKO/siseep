@@ -18,6 +18,14 @@ export const FIELD_NAMES: Record<FieldKey, string> = {
   humano: 'De lo humano y lo comunitario',
 };
 
+/** Short field names, as the Excel writes them in "Ojo en" ("Saberes, Ética"). */
+export const FIELD_SHORT_NAMES: Record<FieldKey, string> = {
+  lenguajes: 'Lenguajes',
+  saberes: 'Saberes',
+  etica: 'Ética',
+  humano: 'De lo humano',
+};
+
 /** Spanish UI labels for each role. */
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: 'Administración',

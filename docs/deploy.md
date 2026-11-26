@@ -130,30 +130,31 @@ Atlas siempre es un replica set, así que las transacciones funcionan.
 
 ## Variables de la API
 
-| Variable                                         | Obligatoria  | Ejemplo staging                       | Notas                                                                             |
-| ------------------------------------------------ | ------------ | ------------------------------------- | --------------------------------------------------------------------------------- |
-| `NODE_ENV`                                       | sí           | `staging`                             | `development`, `test`, `staging`, `production`                                    |
-| `PORT`                                           | no           | (Railway)                             | 3000 por defecto                                                                  |
-| `LOG_LEVEL`                                      | no           | `info`                                |                                                                                   |
-| `MONGODB_URI`                                    | sí           | `mongodb+srv://…/siseep`              | Debe ser replica set                                                              |
-| `JWT_ACCESS_SECRET`                              | sí           | 64 caracteres aleatorios              | Mínimo 32. Distinto por ambiente                                                  |
-| `JWT_ACCESS_TTL`                                 | no           | `900`                                 | Segundos                                                                          |
-| `REFRESH_TOKEN_TTL_DAYS`                         | no           | `30`                                  |                                                                                   |
-| `COOKIE_SECURE`                                  | no           | `true`                                | Siempre `true` fuera de local                                                     |
-| `WEB_ORIGIN`                                     | sí           | `https://x.vercel.app`                | CORS; varios separados por coma                                                   |
-| `WEB_URL`                                        | sí           | `https://x.vercel.app`                | Para los enlaces de los correos                                                   |
-| `TRUST_PROXY`                                    | sí           | `2`                                   | Saltos de proxy (Vercel + Railway) para obtener la IP real del límite de intentos |
-| `SWAGGER_ENABLED`                                | no           | `true`                                | En producción se puede apagar                                                     |
-| `THROTTLE_LOGIN_LIMIT` / `_TTL_MS` / `_BLOCK_MS` | no           | `5` / `60000` / `900000`              |                                                                                   |
-| `INVITATION_TTL_DAYS`                            | no           | `7`                                   |                                                                                   |
-| `PASSWORD_RESET_TTL_MINUTES`                     | no           | `60`                                  |                                                                                   |
-| `ACTIVITY_GUARDIAN_DELAY_HOURS`                  | no           | `24`                                  | Horas antes de que los padres vean una actividad nueva                            |
-| `CHROMIUM_PATH`                                  | no           | (vacío)                               | En Docker se usa `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` de la imagen       |
-| `PDF_CONCURRENCY`                                | no           | `2`                                   | PDFs simultáneos (Railway: mínimo 1 GB de RAM)                                    |
-| `MAIL_DRIVER`                                    | sí           | `resend`                              | `console` solo en local                                                           |
-| `MAIL_FROM`                                      | sí           | `Evaluación Allende <no-responder@…>` | Dominio verificado en Resend                                                      |
-| `RESEND_API_KEY`                                 | con `resend` | `re_…`                                |                                                                                   |
-| `SEED_*`                                         | para el seed |                                       | Contraseñas de 10+ caracteres; solo se usan al crear la cuenta                    |
+| Variable                                         | Obligatoria  | Ejemplo staging                       | Notas                                                                                  |
+| ------------------------------------------------ | ------------ | ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                       | sí           | `staging`                             | `development`, `test`, `staging`, `production`                                         |
+| `PORT`                                           | no           | (Railway)                             | 3000 por defecto                                                                       |
+| `LOG_LEVEL`                                      | no           | `info`                                |                                                                                        |
+| `MONGODB_URI`                                    | sí           | `mongodb+srv://…/siseep`              | Debe ser replica set                                                                   |
+| `JWT_ACCESS_SECRET`                              | sí           | 64 caracteres aleatorios              | Mínimo 32. Distinto por ambiente                                                       |
+| `JWT_ACCESS_TTL`                                 | no           | `900`                                 | Segundos                                                                               |
+| `REFRESH_TOKEN_TTL_DAYS`                         | no           | `30`                                  |                                                                                        |
+| `REFRESH_REUSE_GRACE_SECONDS`                    | no           | `60`                                  | Gracia para respuestas de refresh perdidas; después, reuso = cerrar todas las sesiones |
+| `COOKIE_SECURE`                                  | no           | `true`                                | Siempre `true` fuera de local                                                          |
+| `WEB_ORIGIN`                                     | sí           | `https://x.vercel.app`                | CORS; varios separados por coma                                                        |
+| `WEB_URL`                                        | sí           | `https://x.vercel.app`                | Para los enlaces de los correos                                                        |
+| `TRUST_PROXY`                                    | sí           | `2`                                   | Saltos de proxy (Vercel + Railway) para obtener la IP real del límite de intentos      |
+| `SWAGGER_ENABLED`                                | no           | `true`                                | En producción se puede apagar                                                          |
+| `THROTTLE_LOGIN_LIMIT` / `_TTL_MS` / `_BLOCK_MS` | no           | `5` / `60000` / `900000`              |                                                                                        |
+| `INVITATION_TTL_DAYS`                            | no           | `7`                                   |                                                                                        |
+| `PASSWORD_RESET_TTL_MINUTES`                     | no           | `60`                                  |                                                                                        |
+| `ACTIVITY_GUARDIAN_DELAY_HOURS`                  | no           | `24`                                  | Horas antes de que los padres vean una actividad nueva                                 |
+| `CHROMIUM_PATH`                                  | no           | (vacío)                               | En Docker se usa `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` de la imagen            |
+| `PDF_CONCURRENCY`                                | no           | `2`                                   | PDFs simultáneos (Railway: mínimo 1 GB de RAM)                                         |
+| `MAIL_DRIVER`                                    | sí           | `resend`                              | `console` solo en local                                                                |
+| `MAIL_FROM`                                      | sí           | `Evaluación Allende <no-responder@…>` | Dominio verificado en Resend                                                           |
+| `RESEND_API_KEY`                                 | con `resend` | `re_…`                                |                                                                                        |
+| `SEED_*`                                         | para el seed |                                       | Contraseñas de 10+ caracteres; solo se usan al crear la cuenta                         |
 
 ## Notas
 
