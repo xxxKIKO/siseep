@@ -5,6 +5,7 @@ import {
   GraduationCap,
   House,
   KeyRound,
+  LayoutDashboard,
   type LucideIcon,
   School,
   UserRound,
@@ -45,6 +46,9 @@ export function navItemsFor(role: Role): NavItem[] {
       { to: '/admin/escuela', label: 'Escuela', icon: School },
       account,
     ];
+  }
+  if (role === 'DIRECTOR') {
+    return [{ ...home, label: 'Tablero', icon: LayoutDashboard, end: false }, account];
   }
   if (role === 'TEACHER') {
     return [{ ...home, label: 'Mis grupos', icon: UsersRound, end: false }, account];

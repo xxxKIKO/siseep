@@ -17,6 +17,16 @@ describe('Auth (e2e)', () => {
     await ctx.close();
   });
 
+  /** Moves every rotation 2 minutes into the past, beyond REFRESH_REUSE_GRACE_SECONDS (60). */
+  async function expireReuseGrace() {
+    await ctx.connection
+      .collection('sessions')
+      .updateMany(
+        { rotatedAt: { $ne: null } },
+        { $set: { rotatedAt: new Date(Date.now() - 120_000) } },
+      );
+  }
+
   async function login(email: string, password = DEFAULT_PASSWORD) {
     return ctx.http().post('/api/v1/auth/login').send({ email, password });
   }
@@ -137,6 +147,8 @@ describe('Auth (e2e)', () => {
       const newCookie = refreshCookieFrom(rotated)!;
       const newAccess = rotated.body.accessToken as string;
 
+      // The reuse grace period (lost responses) is over.
+      await expireReuseGrace();
       const reuse = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', oldCookie);
       expect(reuse.status).toBe(401);
       expect(reuse.body.code).toBe('REFRESH_TOKEN_REUSED');
@@ -152,6 +164,28 @@ describe('Auth (e2e)', () => {
         (await ctx.http().get('/api/v1/auth/me').set('Authorization', `Bearer ${newAccess}`))
           .status,
       ).toBe(401);
+    });
+
+    it('a lost refresh response does not log the user out (reuse grace period)', async () => {
+      const user = await ctx.createUser(['TEACHER']);
+      const first = refreshCookieFrom(await login(user.email))!;
+
+      // The server rotates, but the browser never receives the new cookie (tab reloaded).
+      const lost = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', first);
+      expect(lost.status).toBe(200);
+
+      // Seconds later the browser sends the old cookie again: accepted and rotated.
+      const retry = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', first);
+      expect(retry.status).toBe(200);
+      const current = refreshCookieFrom(retry)!;
+      expect((await ctx.http().post('/api/v1/auth/refresh').set('Cookie', current)).status).toBe(
+        200,
+      );
+
+      // The secret two rotations back is no longer "previous": reuse → everything revoked.
+      const stale = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', first);
+      expect(stale.status).toBe(401);
+      expect(stale.body.code).toBe('REFRESH_TOKEN_REUSED');
     });
 
     it('returns 401 without a cookie or with garbage', async () => {

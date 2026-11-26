@@ -37,7 +37,7 @@ const currentLocation = () => screen.getByTestId('location').textContent;
 /** Text that only the home of each portal shows. */
 const HOME_MARKERS: Record<Role, string> = {
   ADMIN: 'Importar Excel',
-  DIRECTOR: 'Próximamente',
+  DIRECTOR: 'Tablero de la escuela',
   TEACHER: 'Aún no tienes grupos asignados. Pide a la administración que te asigne a tu grupo.',
   GUARDIAN: 'Próximamente',
 };

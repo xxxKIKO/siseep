@@ -10,3 +10,5 @@ export * from './schemas/grading-scheme';
 export * from './schemas/catalog';
 export * from './schemas/imports';
 export * from './schemas/capture';
+export * from './grading';
+export * from './schemas/summary';

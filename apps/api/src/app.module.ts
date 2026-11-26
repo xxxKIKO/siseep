@@ -22,6 +22,7 @@ import { ReportsModule } from './reports/reports.module';
 import { SchoolYearsModule } from './school-years/school-years.module';
 import { SchoolsModule } from './schools/schools.module';
 import { StudentsModule } from './students/students.module';
+import { SummaryModule } from './summary/summary.module';
 import { UsersAdminModule } from './users/users-admin.module';
 import { UsersModule } from './users/users.module';
 
@@ -65,6 +66,7 @@ import { UsersModule } from './users/users.module';
     ModelsModule,
     AccessModule,
     AuditModule,
+    SummaryModule,
     MailModule,
     SchoolsModule,
     UsersModule,

@@ -52,8 +52,20 @@ export class SessionsService {
     return { session, refreshToken: `${session._id.toString()}.${secret}` };
   }
 
-  /** Validates the refresh token and replaces its secret. Throws on invalid or reused tokens. */
-  async rotate(refreshToken: string | undefined, meta: ClientMeta): Promise<IssuedSession> {
+  /**
+   * Validates the refresh token and replaces its secret. Throws on invalid or reused tokens.
+   *
+   * Reuse interval: for REFRESH_REUSE_GRACE_SECONDS after a rotation the immediately previous
+   * secret is still accepted (and rotated again). Without it, a refresh whose response is lost
+   * (tab closed, page reloaded, signal dropped mid-request) leaves the browser with the old
+   * cookie, and the next refresh would look like theft and log the person out everywhere.
+   * After the grace period, the old secret is treated as reuse.
+   */
+  async rotate(
+    refreshToken: string | undefined,
+    meta: ClientMeta,
+    attempt = 0,
+  ): Promise<IssuedSession> {
     const parsed = parseRefreshToken(refreshToken);
     if (!parsed) throw Errors.invalidRefreshToken();
 
@@ -63,17 +75,26 @@ export class SessionsService {
     }
 
     const presentedHash = sha256(parsed.secret);
-    if (!safeEqualHex(presentedHash, session.tokenHash)) {
-      await this.handleReuse(session.userId);
-    }
+    const graceMs = this.config.get('REFRESH_REUSE_GRACE_SECONDS') * 1000;
+    const isCurrent = safeEqualHex(presentedHash, session.tokenHash);
+    const isRecentPrevious =
+      !isCurrent &&
+      session.previousTokenHash !== null &&
+      safeEqualHex(presentedHash, session.previousTokenHash) &&
+      session.rotatedAt !== null &&
+      Date.now() - session.rotatedAt.getTime() <= graceMs;
+    if (!isCurrent && !isRecentPrevious) await this.handleReuse(session.userId);
 
     const secret = randomToken();
     const updated = await this.sessionModel
       .findOneAndUpdate(
-        { _id: session._id, tokenHash: presentedHash, revokedAt: null },
+        // Same version we validated: a concurrent rotation in between makes this miss.
+        { _id: session._id, tokenHash: session.tokenHash, revokedAt: null },
         {
           $set: {
             tokenHash: sha256(secret),
+            previousTokenHash: session.tokenHash,
+            rotatedAt: new Date(),
             expiresAt: this.expiry(),
             lastUsedAt: new Date(),
             ip: meta.ip,
@@ -83,8 +104,24 @@ export class SessionsService {
         { new: true },
       )
       .exec();
-    // Another request rotated the same secret first: the token was used twice.
-    if (!updated) await this.handleReuse(session.userId);
+    if (!updated) {
+      // Another request rotated first. Within the grace period that is a race (two requests
+      // with the same cookie): retry once against the new version; otherwise it is reuse.
+      if ((isCurrent || isRecentPrevious) && attempt === 0) {
+        const retry = await this.sessionModel.findById(session._id).exec();
+        if (
+          retry &&
+          !retry.revokedAt &&
+          retry.previousTokenHash !== null &&
+          safeEqualHex(presentedHash, retry.previousTokenHash) &&
+          retry.rotatedAt !== null &&
+          Date.now() - retry.rotatedAt.getTime() <= graceMs
+        ) {
+          return this.rotate(refreshToken, meta, attempt + 1);
+        }
+      }
+      await this.handleReuse(session.userId);
+    }
 
     return { session: updated!, refreshToken: `${updated!._id.toString()}.${secret}` };
   }
