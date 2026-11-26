@@ -38,6 +38,10 @@ export class User {
   @Prop({ type: 'ObjectId' })
   avatarFileId?: Types.ObjectId;
 
+  /** Teacher's logo, printed on the right of the report card header. */
+  @Prop({ type: 'ObjectId', default: null })
+  logoFileId?: Types.ObjectId | null;
+
   @Prop({ type: Date, default: null })
   lastLoginAt?: Date | null;
 
@@ -63,5 +67,6 @@ export function toPublicUser(user: UserDocument): PublicUser {
     roles: user.roles,
     status: user.status,
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
+    hasLogo: Boolean(user.logoFileId),
   };
 }

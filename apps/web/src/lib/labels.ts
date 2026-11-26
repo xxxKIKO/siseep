@@ -39,6 +39,16 @@ export const PERIOD_STATUS_LABELS: Record<PeriodStatus, string> = {
   PUBLISHED: 'Publicado',
 };
 
+export const PERIOD_STATUS_TONES: Record<
+  PeriodStatus,
+  'success' | 'warning' | 'neutral' | 'primary'
+> = {
+  OPEN: 'success',
+  IN_REVIEW: 'warning',
+  CLOSED: 'neutral',
+  PUBLISHED: 'primary',
+};
+
 export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
   ACTIVE: 'Activo',
   TRANSFERRED: 'Cambio de escuela',

@@ -72,4 +72,19 @@ export const Errors = {
       ErrorCode.PERIOD_NOT_OPEN,
       'El periodo no está abierto: ya no se pueden cambiar sus actividades.',
     ),
+  periodLocked: () =>
+    new AppException(
+      HttpStatus.CONFLICT,
+      ErrorCode.PERIOD_NOT_OPEN,
+      'El periodo ya está cerrado: no se pueden cambiar ajustes, observaciones ni notas.',
+    ),
+  periodIncomplete: (details: unknown) =>
+    new AppException(
+      HttpStatus.UNPROCESSABLE_ENTITY,
+      ErrorCode.PERIOD_INCOMPLETE,
+      'No se puede cerrar: hay calificaciones pendientes o campos incompletos.',
+      details,
+    ),
+  invalidTransition: (message: string) =>
+    new AppException(HttpStatus.CONFLICT, ErrorCode.INVALID_TRANSITION, message),
 };

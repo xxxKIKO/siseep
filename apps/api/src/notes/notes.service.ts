@@ -16,6 +16,7 @@ import type { Actor } from '../common/request-user';
 import { asSubject, assertCan, oid, scopedQuery, teacherSummary } from '../common/scope';
 import { Group } from '../groups/group.schema';
 import { GroupsService } from '../groups/groups.service';
+import { PeriodStatusService } from '../periods/period-status.service';
 import { Period } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
 import { Student } from '../students/student.schema';
@@ -45,6 +46,7 @@ export class NotesService {
     @InjectConnection() private readonly connection: Connection,
     private readonly groups: GroupsService,
     private readonly audit: AuditService,
+    private readonly periodStatus: PeriodStatusService,
   ) {}
 
   // ---- reads -----------------------------------------------------------------
@@ -58,6 +60,25 @@ export class NotesService {
       .sort({ createdAt: -1 })
       .exec();
     return this.toViews(notes, actor);
+  }
+
+  /** Notes of a group in one period by student id (reference on the closing screen). */
+  async listForGroupPeriod(
+    groupId: Types.ObjectId,
+    periodId: Types.ObjectId,
+    actor: Actor,
+  ): Promise<Record<string, NoteView[]>> {
+    const scope = scopedQuery(actor, 'StudentNote');
+    if (!scope) return {};
+    const notes = await this.noteModel
+      .find({ $and: [scope, { groupId, periodId, deletedAt: null }] })
+      .sort({ date: 1, createdAt: 1 })
+      .exec();
+    const byStudent: Record<string, NoteView[]> = {};
+    for (const view of await this.toViews(notes, actor)) {
+      (byStudent[view.student.id] ??= []).push(view);
+    }
+    return byStudent;
   }
 
   /** Notes of a student (optionally one period), within the actor's scope. */
@@ -94,7 +115,7 @@ export class NotesService {
       groupId: group._id,
       authorId: actor.user.id,
     });
-    const period = await this.periodFor(group.schoolYearId, input.date);
+    const period = await this.periodFor(group.schoolYearId, group._id, input.date);
 
     let note!: StudentNoteDocument;
     await this.connection.transaction(async (session) => {
@@ -139,12 +160,13 @@ export class NotesService {
     assertCan(actor.ability, 'update', 'StudentNote', note);
     const before = snapshot(note);
     if (input.date) {
+      await this.periodStatus.assertResultsEditable(note.periodId, note.groupId);
       const group = await this.groupModel.findById(note.groupId).lean().exec();
-      const period = await this.periodFor(group!.schoolYearId, input.date);
+      const period = await this.periodFor(group!.schoolYearId, note.groupId, input.date);
       note.date = dateOnlyToDate(input.date);
       note.periodId = period._id;
     } else {
-      await this.assertPeriodEditable(note.periodId);
+      await this.periodStatus.assertResultsEditable(note.periodId, note.groupId);
     }
     if (input.kind) note.kind = input.kind;
     if (input.text) note.text = input.text;
@@ -178,7 +200,7 @@ export class NotesService {
   async remove(id: string, actor: Actor): Promise<void> {
     const note = await this.load(id, actor);
     assertCan(actor.ability, 'delete', 'StudentNote', note);
-    await this.assertPeriodEditable(note.periodId);
+    await this.periodStatus.assertResultsEditable(note.periodId, note.groupId);
     await this.connection.transaction(async (session) => {
       note.deletedAt = new Date();
       await note.save({ session });
@@ -224,23 +246,16 @@ export class NotesService {
     return { student, enrollment, group };
   }
 
-  /** The period of the school year that contains the date; it must not be closed. */
-  private async periodFor(schoolYearId: Types.ObjectId, date: string) {
+  /** The period of the school year that contains the date; the group's period must be editable. */
+  private async periodFor(schoolYearId: Types.ObjectId, groupId: Types.ObjectId, date: string) {
     const day = dateOnlyToDate(date);
     const period = await this.periodModel
       .findOne({ schoolYearId, startDate: { $lte: day }, endDate: { $gte: day } })
       .exec();
     if (!period)
       throw Errors.badRequest('La fecha no cae dentro de ningún periodo del ciclo escolar.');
-    if (period.status === 'CLOSED' || period.status === 'PUBLISHED') throw Errors.periodNotOpen();
+    await this.periodStatus.assertResultsEditable(period._id, groupId);
     return period;
-  }
-
-  private async assertPeriodEditable(periodId: Types.ObjectId): Promise<void> {
-    const period = await this.periodModel.findById(periodId, { status: 1 }).lean().exec();
-    if (period && (period.status === 'CLOSED' || period.status === 'PUBLISHED')) {
-      throw Errors.periodNotOpen();
-    }
   }
 
   private async toViews(notes: StudentNoteDocument[], actor: Actor): Promise<NoteView[]> {

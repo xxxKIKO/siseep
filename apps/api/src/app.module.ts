@@ -7,16 +7,19 @@ import { AccessModule } from './access/access.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { ClosingModule } from './closing/closing.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { AppConfigService } from './config/app-config.service';
 import { AppConfigModule } from './config/config.module';
 import { ModelsModule } from './database/models.module';
+import { FilesModule } from './files/files.module';
 import { GroupsModule } from './groups/groups.module';
 import { HealthController } from './health/health.controller';
 import { ImportsModule } from './imports/imports.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
 import { NotesModule } from './notes/notes.module';
+import { PeriodsModule } from './periods/periods.module';
 import { PermissionGrantsModule } from './permission-grants/permission-grants.module';
 import { ReportsModule } from './reports/reports.module';
 import { SchoolYearsModule } from './school-years/school-years.module';
@@ -64,6 +67,8 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     ModelsModule,
+    FilesModule,
+    PeriodsModule,
     AccessModule,
     AuditModule,
     SummaryModule,
@@ -79,6 +84,7 @@ import { UsersModule } from './users/users.module';
     StudentsModule,
     ActivitiesModule,
     NotesModule,
+    ClosingModule,
     ReportsModule,
     ImportsModule,
   ],

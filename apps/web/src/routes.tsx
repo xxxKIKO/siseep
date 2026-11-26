@@ -13,10 +13,12 @@ import { GrantsPage } from '@/pages/admin/GrantsPage';
 import { GroupDetailPage } from '@/pages/admin/GroupDetailPage';
 import { GroupsPage } from '@/pages/admin/GroupsPage';
 import { ImportPage } from '@/pages/admin/ImportPage';
+import { PeriodsPage } from '@/pages/admin/PeriodsPage';
 import { SchoolPage } from '@/pages/admin/SchoolPage';
 import { SchoolYearsPage } from '@/pages/admin/SchoolYearsPage';
 import { StudentsPage } from '@/pages/admin/StudentsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
+import { ClosingPage } from '@/pages/closing/ClosingPage';
 import { ComingSoonPage } from '@/pages/ComingSoonPage';
 import { DirectorDashboardPage } from '@/pages/director/DirectorDashboardPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -39,6 +41,11 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
     { path: 'usuarios', element: <UsersPage /> },
     { path: 'permisos', element: <GrantsPage /> },
     { path: 'importar', element: <ImportPage /> },
+    { path: 'periodos', element: <PeriodsPage /> },
+    {
+      path: 'grupos/:groupId/cierre',
+      element: <ClosingPage backTo={() => ({ to: '/admin/periodos', label: 'Periodos' })} />,
+    },
   ],
   DIRECTOR: [
     { index: true, element: <DirectorDashboardPage /> },
@@ -48,6 +55,14 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
     { index: true, element: <TeacherHomePage /> },
     { path: 'grupos/:groupId', element: <TeacherGroupPage /> },
     { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage /> },
+    {
+      path: 'grupos/:groupId/cierre',
+      element: (
+        <ClosingPage
+          backTo={(id, name) => ({ to: `/maestro/grupos/${id}`, label: `Grupo ${name}` })}
+        />
+      ),
+    },
     { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
     { path: 'actividades/:activityId', element: <CapturePage /> },
   ],

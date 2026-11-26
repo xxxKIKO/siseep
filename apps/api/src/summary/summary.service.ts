@@ -1,22 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
-  DEFAULT_GRADING_SCHEME,
-  type EngineActivity,
-  type EngineGrade,
   FIELD_SHORT_NAMES,
   type FieldKey,
-  type FieldOverrides,
   type FieldStats,
   type GradeBucket,
-  type GradingScheme as SchemeData,
   type GroupOverview,
   type GroupSummary,
   type PendingActivity,
   roundTo,
-  shortStudentName,
   type StudentSummaryView,
-  studentPeriodResult,
   type SummaryAlert,
   type SummaryAlertType,
 } from '@siseep/shared';
@@ -25,14 +18,13 @@ import { Activity } from '../activities/activity.schema';
 import { Grade } from '../activities/grade.schema';
 import { Errors } from '../common/app.exception';
 import type { Actor } from '../common/request-user';
-import { asSubject, oid, studentFullName } from '../common/scope';
-import { GradingScheme } from '../grading-schemes/grading-scheme.schema';
+import { asSubject, oid } from '../common/scope';
 import type { GroupDocument } from '../groups/group.schema';
 import { GroupsService } from '../groups/groups.service';
-import { PeriodResult } from '../period-results/period-result.schema';
+import { PeriodStatusService } from '../periods/period-status.service';
 import { Period, type PeriodDocument } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
-import { Student } from '../students/student.schema';
+import { PeriodDataService } from './period-data.service';
 import { SummaryCache } from './summary-cache.service';
 
 const LOW_RED = 6;
@@ -52,12 +44,11 @@ export class SummaryService {
     @InjectModel(Activity.name) private readonly activityModel: Model<Activity>,
     @InjectModel(Grade.name) private readonly gradeModel: Model<Grade>,
     @InjectModel(Period.name) private readonly periodModel: Model<Period>,
-    @InjectModel(GradingScheme.name) private readonly schemeModel: Model<GradingScheme>,
     @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<Enrollment>,
-    @InjectModel(Student.name) private readonly studentModel: Model<Student>,
-    @InjectModel(PeriodResult.name) private readonly resultModel: Model<PeriodResult>,
     private readonly groups: GroupsService,
     private readonly cache: SummaryCache,
+    private readonly periodData: PeriodDataService,
+    private readonly periodStatus: PeriodStatusService,
   ) {}
 
   async forGroup(groupId: string, periodId: string, actor: Actor): Promise<GroupSummary> {
@@ -189,89 +180,10 @@ export class SummaryService {
 
   // ---- calculation --------------------------------------------------------------
   private async compute(group: GroupDocument, period: PeriodDocument): Promise<GroupSummary> {
-    const [schemeDoc, enrollments, activities, results] = await Promise.all([
-      this.schemeModel.findOne({ schoolYearId: group.schoolYearId }).lean().exec(),
-      this.enrollmentModel
-        .find({ groupId: group._id, status: 'ACTIVE' })
-        .sort({ listNumber: 1 })
-        .lean()
-        .exec(),
-      // Query 1: activities of the group in the period.
-      this.activityModel
-        .find({ groupId: group._id, periodId: period._id, deletedAt: null })
-        .lean()
-        .exec(),
-      this.resultModel.find({ groupId: group._id, periodId: period._id }).lean().exec(),
+    const [{ scheme, activities, grades, rows }, status] = await Promise.all([
+      this.periodData.load(group, period._id),
+      this.periodStatus.effective(period._id, group._id),
     ]);
-    // Query 2: their grades.
-    const grades = await this.gradeModel
-      .find({
-        groupId: group._id,
-        periodId: period._id,
-        activityId: { $in: activities.map((a) => a._id) },
-      })
-      .lean()
-      .exec();
-    const students = await this.studentModel
-      .find({ _id: { $in: enrollments.map((e) => e.studentId) } })
-      .lean()
-      .exec();
-
-    const scheme: SchemeData = schemeDoc
-      ? {
-          fields: schemeDoc.fields,
-          rounding: schemeDoc.rounding,
-          lowThreshold: schemeDoc.lowThreshold,
-          lowLegend: schemeDoc.lowLegend,
-          minFinal: schemeDoc.minFinal,
-          maxFinal: schemeDoc.maxFinal,
-        }
-      : DEFAULT_GRADING_SCHEME;
-    const engineActivities: EngineActivity[] = activities.map((a) => ({
-      id: a._id.toString(),
-      fieldKey: a.fieldKey,
-      component: a.component,
-      subjectKey: a.subjectKey ?? null,
-    }));
-    const gradesByStudent = new Map<string, EngineGrade[]>();
-    for (const g of grades) {
-      const list = gradesByStudent.get(g.studentId.toString()) ?? [];
-      list.push({ activityId: g.activityId.toString(), status: g.status, score: g.score ?? null });
-      gradesByStudent.set(g.studentId.toString(), list);
-    }
-    const overridesBy = new Map(
-      results.map((r) => [
-        r.studentId.toString(),
-        Object.fromEntries(
-          r.fields
-            .filter((f) => f.override !== null && f.override !== undefined)
-            .map((f) => [f.fieldKey, f.override]),
-        ) as FieldOverrides,
-      ]),
-    );
-    const studentBy = new Map(students.map((s) => [s._id.toString(), s]));
-
-    const rows = enrollments.flatMap((e) => {
-      const s = studentBy.get(e.studentId.toString());
-      if (!s) return [];
-      const id = s._id.toString();
-      return [
-        {
-          student: {
-            id,
-            listNumber: e.listNumber,
-            fullName: studentFullName(s),
-            shortName: shortStudentName(s),
-          },
-          result: studentPeriodResult(
-            scheme,
-            engineActivities,
-            gradesByStudent.get(id) ?? [],
-            overridesBy.get(id),
-          ),
-        },
-      ];
-    });
 
     // Alerts per student and field.
     const alerts: SummaryAlert[] = [];
@@ -368,7 +280,7 @@ export class SummaryService {
 
     return {
       group: { id: group._id.toString(), name: group.name },
-      period: { id: period._id.toString(), name: period.name, status: period.status },
+      period: { id: period._id.toString(), name: period.name, status },
       generatedAt: new Date().toISOString(),
       fields: [...scheme.fields]
         .sort((a, b) => a.order - b.order)

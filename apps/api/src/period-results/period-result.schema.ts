@@ -7,9 +7,13 @@ export class PeriodResultField {
   @Prop({ type: String, enum: FIELD_KEYS, required: true })
   fieldKey!: FieldKey;
 
-  /** D, P, E and complementary averages (filled when the period is closed, stage 4). */
+  /** D, P, E and COMPLEMENTARIA averages (filled when the period is closed). */
   @Prop({ type: MongooseSchema.Types.Mixed, default: null })
   components?: Record<string, number | null> | null;
+
+  /** 0.5·D + 0.2·P + 0.3·E before the complementary subject. */
+  @Prop({ type: Number, default: null })
+  base?: number | null;
 
   @Prop({ type: Number, default: null })
   calculated?: number | null;
@@ -40,8 +44,8 @@ export class PeriodObservations {
 const PeriodObservationsSchema = SchemaFactory.createForClass(PeriodObservations);
 
 /**
- * Per-student period closing. In stage 1 the import only stores adjustments, observations and
- * the custom legend; calculated values and the snapshot arrive with the engine (stages 3-4).
+ * Per-student period result. While the period is open it only holds the teacher's input
+ * (adjustments, observations, custom legend); closing stores the engine's full snapshot.
  */
 @Schema({ collection: 'periodResults', timestamps: true })
 export class PeriodResult {
