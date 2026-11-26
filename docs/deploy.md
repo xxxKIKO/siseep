@@ -147,6 +147,9 @@ Atlas siempre es un replica set, así que las transacciones funcionan.
 | `THROTTLE_LOGIN_LIMIT` / `_TTL_MS` / `_BLOCK_MS` | no           | `5` / `60000` / `900000`              |                                                                                   |
 | `INVITATION_TTL_DAYS`                            | no           | `7`                                   |                                                                                   |
 | `PASSWORD_RESET_TTL_MINUTES`                     | no           | `60`                                  |                                                                                   |
+| `ACTIVITY_GUARDIAN_DELAY_HOURS`                  | no           | `24`                                  | Horas antes de que los padres vean una actividad nueva                            |
+| `CHROMIUM_PATH`                                  | no           | (vacío)                               | En Docker se usa `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium` de la imagen       |
+| `PDF_CONCURRENCY`                                | no           | `2`                                   | PDFs simultáneos (Railway: mínimo 1 GB de RAM)                                    |
 | `MAIL_DRIVER`                                    | sí           | `resend`                              | `console` solo en local                                                           |
 | `MAIL_FROM`                                      | sí           | `Evaluación Allende <no-responder@…>` | Dominio verificado en Resend                                                      |
 | `RESEND_API_KEY`                                 | con `resend` | `re_…`                                |                                                                                   |

@@ -13,3 +13,5 @@ coverage
 *.tsbuildinfo
 dist-seed
 .cache
+test-results
+playwright-report
