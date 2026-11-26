@@ -1,0 +1,1440 @@
+{
+  "source": "apps/api/test/fixtures/calificaciones-5B-periodo1.xlsx (anonimizado). Generado con scripts/build-golden-fixture.ts; no editar a mano.",
+  "weights": {
+    "DESEMPENO": 0.5,
+    "PROYECTO": 0.2,
+    "EXAMEN": 0.3,
+    "fieldWeight": 0.7,
+    "subjectWeight": 0.3,
+    "lowThreshold": 7
+  },
+  "activities": [
+    {
+      "id": "lenguajes:C",
+      "fieldKey": "lenguajes",
+      "component": "DESEMPENO",
+      "name": "Tabla libreta"
+    },
+    {
+      "id": "lenguajes:I",
+      "fieldKey": "lenguajes",
+      "component": "PROYECTO",
+      "name": "Borrador autobiografía"
+    },
+    {
+      "id": "lenguajes:J",
+      "fieldKey": "lenguajes",
+      "component": "PROYECTO",
+      "name": "Autobiografía"
+    },
+    {
+      "id": "lenguajes:K",
+      "fieldKey": "lenguajes",
+      "component": "PROYECTO",
+      "name": "Proyecto: Repaso"
+    },
+    {
+      "id": "lenguajes:L",
+      "fieldKey": "lenguajes",
+      "component": "PROYECTO",
+      "name": "Baile Día de muertos"
+    },
+    {
+      "id": "lenguajes:T",
+      "fieldKey": "lenguajes",
+      "component": "EXAMEN",
+      "name": "Examen"
+    },
+    {
+      "id": "lenguajes:W",
+      "fieldKey": "lenguajes",
+      "component": "COMPLEMENTARIA",
+      "subjectKey": "ingles",
+      "name": "Calificación"
+    },
+    {
+      "id": "saberes:C",
+      "fieldKey": "saberes",
+      "component": "DESEMPENO",
+      "name": "Tabla libreta CN"
+    },
+    {
+      "id": "saberes:D",
+      "fieldKey": "saberes",
+      "component": "DESEMPENO",
+      "name": "Tabla libreta Mate"
+    },
+    {
+      "id": "saberes:I",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "Ovulación..."
+    },
+    {
+      "id": "saberes:J",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "Salud sexual"
+    },
+    {
+      "id": "saberes:K",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "Portada: Nuestro cuerpo"
+    },
+    {
+      "id": "saberes:L",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "3 hojas pegadas"
+    },
+    {
+      "id": "saberes:M",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "Problemas DM"
+    },
+    {
+      "id": "saberes:N",
+      "fieldKey": "saberes",
+      "component": "PROYECTO",
+      "name": "Problemas Feria"
+    },
+    {
+      "id": "saberes:T",
+      "fieldKey": "saberes",
+      "component": "EXAMEN",
+      "name": "Matemáticas"
+    },
+    {
+      "id": "saberes:U",
+      "fieldKey": "saberes",
+      "component": "EXAMEN",
+      "name": "Ciencias"
+    },
+    {
+      "id": "etica:C",
+      "fieldKey": "etica",
+      "component": "DESEMPENO",
+      "name": "Tabla libreta"
+    },
+    {
+      "id": "etica:I",
+      "fieldKey": "etica",
+      "component": "PROYECTO",
+      "name": "Lotería"
+    },
+    {
+      "id": "etica:J",
+      "fieldKey": "etica",
+      "component": "PROYECTO",
+      "name": "Cómic Alarma"
+    },
+    {
+      "id": "etica:K",
+      "fieldKey": "etica",
+      "component": "PROYECTO",
+      "name": "Proyecto: Repaso"
+    },
+    {
+      "id": "etica:L",
+      "fieldKey": "etica",
+      "component": "PROYECTO",
+      "name": "Proyecto: Distingo"
+    },
+    {
+      "id": "etica:T",
+      "fieldKey": "etica",
+      "component": "EXAMEN",
+      "name": "Examen"
+    },
+    {
+      "id": "humano:C",
+      "fieldKey": "humano",
+      "component": "DESEMPENO",
+      "name": "Tabla libreta"
+    },
+    {
+      "id": "humano:I",
+      "fieldKey": "humano",
+      "component": "PROYECTO",
+      "name": "Jornada Concient."
+    },
+    {
+      "id": "humano:J",
+      "fieldKey": "humano",
+      "component": "PROYECTO",
+      "name": "Calaveras manualidad"
+    },
+    {
+      "id": "humano:K",
+      "fieldKey": "humano",
+      "component": "PROYECTO",
+      "name": "Proyecto Valores"
+    },
+    {
+      "id": "humano:L",
+      "fieldKey": "humano",
+      "component": "PROYECTO",
+      "name": "Proyecto: Mi familia"
+    },
+    {
+      "id": "humano:T",
+      "fieldKey": "humano",
+      "component": "EXAMEN",
+      "name": "Examen"
+    },
+    {
+      "id": "humano:W",
+      "fieldKey": "humano",
+      "component": "COMPLEMENTARIA",
+      "subjectKey": "ed_fisica",
+      "name": "Calificación"
+    }
+  ],
+  "students": [
+    {
+      "listNumber": 1,
+      "grades": {
+        "lenguajes:C": 8.8,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.9,
+        "lenguajes:K": 8.6,
+        "lenguajes:L": 8,
+        "lenguajes:T": 8,
+        "lenguajes:W": 10,
+        "saberes:C": 8.2,
+        "saberes:D": 7.3,
+        "saberes:I": 10,
+        "saberes:J": 9,
+        "saberes:K": 9,
+        "saberes:L": 8.3,
+        "saberes:M": 10,
+        "saberes:N": 6,
+        "saberes:T": 8.5,
+        "saberes:U": 8.5,
+        "etica:C": 9,
+        "etica:I": 10,
+        "etica:J": 8.5,
+        "etica:K": 8,
+        "etica:L": 10,
+        "etica:T": 6,
+        "humano:C": 8.1,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 7,
+        "humano:L": 8.5,
+        "humano:T": 9.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.0375,
+          "rounded": 9,
+          "final": 9
+        },
+        "saberes": {
+          "calculated": 8.168333333,
+          "rounded": 8,
+          "final": 8
+        },
+        "etica": {
+          "calculated": 8.125,
+          "rounded": 8,
+          "final": 8
+        },
+        "humano": {
+          "calculated": 9.0725,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 8.8,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 2,
+      "grades": {
+        "lenguajes:C": 7,
+        "lenguajes:I": 7,
+        "lenguajes:J": 8,
+        "lenguajes:K": 5.1,
+        "lenguajes:L": 7,
+        "lenguajes:T": 5,
+        "lenguajes:W": 10,
+        "saberes:C": 7.3,
+        "saberes:D": 6.9,
+        "saberes:I": 8,
+        "saberes:J": 7,
+        "saberes:K": 9.9,
+        "saberes:L": 6.5,
+        "saberes:M": 4,
+        "saberes:N": 0,
+        "saberes:T": 3.5,
+        "saberes:U": 4.5,
+        "etica:C": 5.7,
+        "etica:I": 0,
+        "etica:J": 8.5,
+        "etica:K": 5,
+        "etica:L": 0,
+        "etica:T": 3,
+        "humano:C": 7.5,
+        "humano:I": 9.7,
+        "humano:J": 0,
+        "humano:K": 3,
+        "humano:L": 10,
+        "humano:T": 6,
+        "humano:W": 10
+      },
+      "overrides": {
+        "saberes": 7,
+        "etica": 7
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 7.4485,
+          "rounded": 7,
+          "final": 7
+        },
+        "saberes": {
+          "calculated": 5.93,
+          "rounded": 6,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 4.425,
+          "rounded": 4,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 7.6795,
+          "rounded": 8,
+          "final": 8
+        },
+        "generalAverage": 7.3,
+        "lowFields": ["saberes", "etica"]
+      }
+    },
+    {
+      "listNumber": 3,
+      "grades": {
+        "lenguajes:C": 7.5,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9,
+        "lenguajes:K": 6.5,
+        "lenguajes:L": 9,
+        "lenguajes:T": 6.5,
+        "lenguajes:W": 10,
+        "saberes:C": 6.3,
+        "saberes:D": 7.4,
+        "saberes:I": 8,
+        "saberes:J": 7,
+        "saberes:K": 9.3,
+        "saberes:L": 5.5,
+        "saberes:M": 6,
+        "saberes:N": 8,
+        "saberes:T": 6,
+        "saberes:U": 6.5,
+        "etica:C": 6.5,
+        "etica:I": 9.4,
+        "etica:J": 7,
+        "etica:K": 7,
+        "etica:L": 6,
+        "etica:T": 5,
+        "humano:C": 7.7,
+        "humano:I": 10,
+        "humano:J": 9,
+        "humano:K": 1,
+        "humano:L": 10,
+        "humano:T": 5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "etica": 7
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 8.1975,
+          "rounded": 8,
+          "final": 8
+        },
+        "saberes": {
+          "calculated": 6.76,
+          "rounded": 7,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 6.22,
+          "rounded": 6,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 7.795,
+          "rounded": 8,
+          "final": 8
+        },
+        "generalAverage": 7.5,
+        "lowFields": ["saberes", "etica"]
+      }
+    },
+    {
+      "listNumber": 4,
+      "grades": {
+        "lenguajes:C": 8.2,
+        "lenguajes:I": 9.5,
+        "lenguajes:J": 9,
+        "lenguajes:K": 7.9,
+        "lenguajes:L": 9,
+        "lenguajes:T": 7,
+        "lenguajes:W": 10,
+        "saberes:C": 7.9,
+        "saberes:D": 8.4,
+        "saberes:I": 9,
+        "saberes:J": 8,
+        "saberes:K": 8.3,
+        "saberes:L": 3.3,
+        "saberes:M": 4,
+        "saberes:N": 10,
+        "saberes:T": 6.5,
+        "saberes:U": 8,
+        "etica:C": 7.3,
+        "etica:I": 9.8,
+        "etica:J": 8.5,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 7,
+        "humano:C": 7.9,
+        "humano:I": 9.5,
+        "humano:J": 10,
+        "humano:K": 3,
+        "humano:L": 9,
+        "humano:T": 8.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 8.579,
+          "rounded": 9,
+          "final": 9
+        },
+        "saberes": {
+          "calculated": 7.67,
+          "rounded": 8,
+          "final": 8
+        },
+        "etica": {
+          "calculated": 7.665,
+          "rounded": 8,
+          "final": 8
+        },
+        "humano": {
+          "calculated": 8.6525,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 8.8,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 5,
+      "grades": {
+        "lenguajes:C": 9.6,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.7,
+        "lenguajes:K": 8,
+        "lenguajes:L": 10,
+        "lenguajes:T": 9,
+        "lenguajes:W": 10,
+        "saberes:C": 9.9,
+        "saberes:D": 8.3,
+        "saberes:I": 10,
+        "saberes:J": 8,
+        "saberes:K": 9.3,
+        "saberes:L": 5.5,
+        "saberes:M": 4,
+        "saberes:N": 10,
+        "saberes:T": 7,
+        "saberes:U": 9.5,
+        "etica:C": 8.7,
+        "etica:I": 9.9,
+        "etica:J": 9.9,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 8,
+        "humano:C": 8.6,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 8,
+        "humano:L": 10,
+        "humano:T": 9,
+        "humano:W": 10
+      },
+      "overrides": {
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.5695,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 8.585,
+          "rounded": 9,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.74,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 9.23,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 9.5,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 6,
+      "grades": {
+        "lenguajes:C": 9.7,
+        "lenguajes:I": 10,
+        "lenguajes:J": 10,
+        "lenguajes:K": 9.9,
+        "lenguajes:L": 10,
+        "lenguajes:T": 10,
+        "lenguajes:W": 10,
+        "saberes:C": 9.8,
+        "saberes:D": 9.7,
+        "saberes:I": 10,
+        "saberes:J": 10,
+        "saberes:K": 6,
+        "saberes:L": 10,
+        "saberes:M": 9,
+        "saberes:N": 10,
+        "saberes:T": 10,
+        "saberes:U": 10,
+        "etica:C": 9.6,
+        "etica:I": 9.9,
+        "etica:J": 8,
+        "etica:K": 10,
+        "etica:L": 9.5,
+        "etica:T": 10,
+        "humano:C": 9.3,
+        "humano:I": 9.5,
+        "humano:J": 10,
+        "humano:K": 10,
+        "humano:L": 9,
+        "humano:T": 10,
+        "humano:W": 10
+      },
+      "overrides": {},
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.8915,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 9.708333333,
+          "rounded": 10,
+          "final": 10
+        },
+        "etica": {
+          "calculated": 9.67,
+          "rounded": 10,
+          "final": 10
+        },
+        "humano": {
+          "calculated": 9.7025,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 10,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 7,
+      "grades": {
+        "lenguajes:C": 9.5,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.8,
+        "lenguajes:K": 9.8,
+        "lenguajes:L": 10,
+        "lenguajes:T": 9,
+        "lenguajes:W": 10,
+        "saberes:C": 9.7,
+        "saberes:D": 8.9,
+        "saberes:I": 9,
+        "saberes:J": 10,
+        "saberes:K": 9.9,
+        "saberes:L": 9.3,
+        "saberes:M": 10,
+        "saberes:N": 10,
+        "saberes:T": 9.5,
+        "saberes:U": 9.5,
+        "etica:C": 8.8,
+        "etica:I": 9.9,
+        "etica:J": 9.7,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 7.5,
+        "humano:C": 9.6,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 7,
+        "humano:L": 10,
+        "humano:T": 9.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "saberes": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.601,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 9.44,
+          "rounded": 9,
+          "final": 10
+        },
+        "etica": {
+          "calculated": 8.63,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 9.65,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 9.8,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 8,
+      "grades": {
+        "lenguajes:C": 9.2,
+        "lenguajes:I": 10,
+        "lenguajes:J": 10,
+        "lenguajes:K": 8.5,
+        "lenguajes:L": 7.5,
+        "lenguajes:T": 8,
+        "lenguajes:W": 9,
+        "saberes:C": 9.2,
+        "saberes:D": 7.7,
+        "saberes:I": 8,
+        "saberes:J": 9,
+        "saberes:K": 9.5,
+        "saberes:L": 9.3,
+        "saberes:M": 9,
+        "saberes:N": 6,
+        "saberes:T": 9,
+        "saberes:U": 8.5,
+        "etica:C": 8.6,
+        "etica:I": 7,
+        "etica:J": 9.5,
+        "etica:K": 5.7,
+        "etica:L": 8,
+        "etica:T": 8,
+        "humano:C": 8,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 9,
+        "humano:L": 10,
+        "humano:T": 9,
+        "humano:W": 10
+      },
+      "overrides": {
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 8.86,
+          "rounded": 9,
+          "final": 9
+        },
+        "saberes": {
+          "calculated": 8.543333333,
+          "rounded": 9,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.21,
+          "rounded": 8,
+          "final": 8
+        },
+        "humano": {
+          "calculated": 9.055,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 9,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 9,
+      "grades": {
+        "lenguajes:C": 8.6,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.9,
+        "lenguajes:K": 9.7,
+        "lenguajes:L": 10,
+        "lenguajes:T": 10,
+        "lenguajes:W": 10,
+        "saberes:C": 9.6,
+        "saberes:D": 9,
+        "saberes:I": 10,
+        "saberes:J": 10,
+        "saberes:K": 9.6,
+        "saberes:L": 7.8,
+        "saberes:M": 3,
+        "saberes:N": 8,
+        "saberes:T": 7,
+        "saberes:U": 9,
+        "etica:C": 8.7,
+        "etica:I": 8,
+        "etica:J": 9.9,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 8,
+        "humano:C": 8.6,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 9,
+        "humano:L": 10,
+        "humano:T": 9.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "lenguajes": 10,
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.496,
+          "rounded": 9,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 8.663333333,
+          "rounded": 9,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.645,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 9.37,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 9.5,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 10,
+      "grades": {
+        "lenguajes:C": 9.4,
+        "lenguajes:I": 7,
+        "lenguajes:J": 9.9,
+        "lenguajes:K": 9.4,
+        "lenguajes:L": 10,
+        "lenguajes:T": 9.5,
+        "lenguajes:W": 10,
+        "saberes:C": 9.6,
+        "saberes:D": 9.2,
+        "saberes:I": 10,
+        "saberes:J": 9,
+        "saberes:K": 8.8,
+        "saberes:L": 9.2,
+        "saberes:M": 8,
+        "saberes:N": 8,
+        "saberes:T": 7.5,
+        "saberes:U": 10,
+        "etica:C": 9.2,
+        "etica:I": 10,
+        "etica:J": 9,
+        "etica:K": 10,
+        "etica:L": 9.5,
+        "etica:T": 7,
+        "humano:C": 8.6,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 10,
+        "humano:L": 10,
+        "humano:T": 9,
+        "humano:W": 10
+      },
+      "overrides": {
+        "humano": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.5555,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 9.091666667,
+          "rounded": 9,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.625,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 9.3,
+          "rounded": 9,
+          "final": 10
+        },
+        "generalAverage": 9.5,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 11,
+      "grades": {
+        "lenguajes:C": 5,
+        "lenguajes:I": 7,
+        "lenguajes:J": 8,
+        "lenguajes:K": 2.4,
+        "lenguajes:L": 10,
+        "lenguajes:T": 5,
+        "lenguajes:W": 9,
+        "saberes:C": 0,
+        "saberes:D": 5.3,
+        "saberes:I": 0,
+        "saberes:J": 0,
+        "saberes:K": 5,
+        "saberes:L": 6,
+        "saberes:M": 0,
+        "saberes:N": 0,
+        "saberes:T": 6.5,
+        "saberes:U": 5.5,
+        "etica:C": 5.5,
+        "etica:I": 0,
+        "etica:J": 9.5,
+        "etica:K": 0,
+        "etica:L": 0,
+        "etica:T": 7.5,
+        "humano:C": 4.1,
+        "humano:I": 9,
+        "humano:J": 0,
+        "humano:K": 7,
+        "humano:L": 9.5,
+        "humano:T": 6.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "lenguajes": 7,
+        "saberes": 7,
+        "etica": 7
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 6.459,
+          "rounded": 6,
+          "final": 7
+        },
+        "saberes": {
+          "calculated": 3.491666667,
+          "rounded": 3,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 5.475,
+          "rounded": 5,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 6.6925,
+          "rounded": 7,
+          "final": 7
+        },
+        "generalAverage": 7,
+        "lowFields": ["lenguajes", "saberes", "etica", "humano"]
+      }
+    },
+    {
+      "listNumber": 12,
+      "grades": {
+        "lenguajes:C": 9.8,
+        "lenguajes:I": 10,
+        "lenguajes:J": 10,
+        "lenguajes:K": 9.1,
+        "lenguajes:L": 10,
+        "lenguajes:T": 9,
+        "lenguajes:W": 10,
+        "saberes:C": 9.9,
+        "saberes:D": 9.5,
+        "saberes:I": 8,
+        "saberes:J": 8,
+        "saberes:K": 10,
+        "saberes:L": 9.8,
+        "saberes:M": 10,
+        "saberes:N": 8,
+        "saberes:T": 10,
+        "saberes:U": 9.5,
+        "etica:C": 9.3,
+        "etica:I": 10,
+        "etica:J": 9.7,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 9,
+        "humano:C": 9.6,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 10,
+        "humano:L": 10,
+        "humano:T": 10,
+        "humano:W": 10
+      },
+      "overrides": {
+        "etica": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.6885,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 9.568333333,
+          "rounded": 10,
+          "final": 10
+        },
+        "etica": {
+          "calculated": 9.335,
+          "rounded": 9,
+          "final": 10
+        },
+        "humano": {
+          "calculated": 9.86,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 10,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 13,
+      "grades": {
+        "lenguajes:C": 7.8,
+        "lenguajes:I": 10,
+        "lenguajes:J": 8.5,
+        "lenguajes:K": 7.7,
+        "lenguajes:L": 10,
+        "lenguajes:T": 6,
+        "lenguajes:W": 10,
+        "saberes:C": 8.5,
+        "saberes:D": 7.8,
+        "saberes:I": 5,
+        "saberes:J": 8.5,
+        "saberes:K": 9.9,
+        "saberes:L": 7.5,
+        "saberes:M": 10,
+        "saberes:N": 10,
+        "saberes:T": 8.5,
+        "saberes:U": 8,
+        "etica:C": 8.6,
+        "etica:I": 9,
+        "etica:J": 9.7,
+        "etica:K": 6.4,
+        "etica:L": 5,
+        "etica:T": 7,
+        "humano:C": 5.8,
+        "humano:I": 0,
+        "humano:J": 10,
+        "humano:K": 7,
+        "humano:L": 10,
+        "humano:T": 7.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "saberes": 9
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 8.257,
+          "rounded": 8,
+          "final": 8
+        },
+        "saberes": {
+          "calculated": 8.246666667,
+          "rounded": 8,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 7.905,
+          "rounded": 8,
+          "final": 8
+        },
+        "humano": {
+          "calculated": 7.55,
+          "rounded": 8,
+          "final": 8
+        },
+        "generalAverage": 8.3,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 14,
+      "grades": {
+        "lenguajes:C": 6.8,
+        "lenguajes:I": 10,
+        "lenguajes:J": 7,
+        "lenguajes:K": 4.4,
+        "lenguajes:L": 10,
+        "lenguajes:T": 7,
+        "lenguajes:W": 10,
+        "saberes:C": 7.3,
+        "saberes:D": 7.2,
+        "saberes:I": 9.5,
+        "saberes:J": 10,
+        "saberes:K": 8.3,
+        "saberes:L": 7,
+        "saberes:M": 7,
+        "saberes:N": 7,
+        "saberes:T": 1,
+        "saberes:U": 4.5,
+        "etica:C": 7,
+        "etica:I": 10,
+        "etica:J": 8,
+        "etica:K": 5,
+        "etica:L": 8,
+        "etica:T": 6,
+        "humano:C": 8.6,
+        "humano:I": 0,
+        "humano:J": 8.5,
+        "humano:K": 9,
+        "humano:L": 9,
+        "humano:T": 5.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "saberes": 7
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 7.949,
+          "rounded": 8,
+          "final": 8
+        },
+        "saberes": {
+          "calculated": 6.076666667,
+          "rounded": 6,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 6.85,
+          "rounded": 7,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 8.0925,
+          "rounded": 8,
+          "final": 8
+        },
+        "generalAverage": 7.5,
+        "lowFields": ["saberes", "etica"]
+      }
+    },
+    {
+      "listNumber": 15,
+      "grades": {
+        "lenguajes:C": 6.4,
+        "lenguajes:I": 7,
+        "lenguajes:J": 7,
+        "lenguajes:K": 3.6,
+        "lenguajes:L": 10,
+        "lenguajes:T": 3.5,
+        "lenguajes:W": 9,
+        "saberes:C": 7.2,
+        "saberes:D": 6.2,
+        "saberes:I": 0,
+        "saberes:J": 0,
+        "saberes:K": 5,
+        "saberes:L": 8.5,
+        "saberes:M": 8,
+        "saberes:N": 10,
+        "saberes:T": 4,
+        "saberes:U": 4,
+        "etica:C": 5,
+        "etica:I": 0,
+        "etica:J": 9.7,
+        "etica:K": 2,
+        "etica:L": 5,
+        "etica:T": 1,
+        "humano:C": 6.2,
+        "humano:I": 8,
+        "humano:J": 8.5,
+        "humano:K": 0,
+        "humano:L": 9,
+        "humano:T": 2.5,
+        "humano:W": 10
+      },
+      "overrides": {
+        "saberes": 7,
+        "etica": 7
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 6.641,
+          "rounded": 7,
+          "final": 7
+        },
+        "saberes": {
+          "calculated": 5.6,
+          "rounded": 6,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 3.635,
+          "rounded": 4,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 6.5875,
+          "rounded": 7,
+          "final": 7
+        },
+        "generalAverage": 7,
+        "lowFields": ["lenguajes", "saberes", "etica", "humano"]
+      }
+    },
+    {
+      "listNumber": 16,
+      "grades": {
+        "lenguajes:C": 4.7,
+        "lenguajes:I": 0,
+        "lenguajes:J": 0,
+        "lenguajes:K": 8.9,
+        "lenguajes:L": 9,
+        "lenguajes:T": 7.5,
+        "lenguajes:W": 10,
+        "saberes:C": 4.8,
+        "saberes:D": 4.5,
+        "saberes:I": 8,
+        "saberes:J": 9,
+        "saberes:K": 6.3,
+        "saberes:L": 6.6,
+        "saberes:M": 8,
+        "saberes:N": 2,
+        "saberes:T": 2,
+        "saberes:U": 9.5,
+        "etica:C": 6,
+        "etica:I": 9,
+        "etica:J": 9,
+        "etica:K": 7.1,
+        "etica:L": 8,
+        "etica:T": 6.5,
+        "humano:C": 4.7,
+        "humano:I": 9,
+        "humano:J": 10,
+        "humano:K": 6,
+        "humano:L": 10,
+        "humano:T": 8.5,
+        "humano:W": 9
+      },
+      "overrides": {
+        "saberes": 7,
+        "humano": 8
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 6.8465,
+          "rounded": 7,
+          "final": 7
+        },
+        "saberes": {
+          "calculated": 5.38,
+          "rounded": 5,
+          "final": 7
+        },
+        "etica": {
+          "calculated": 6.605,
+          "rounded": 7,
+          "final": 7
+        },
+        "humano": {
+          "calculated": 7.355,
+          "rounded": 7,
+          "final": 8
+        },
+        "generalAverage": 7.3,
+        "lowFields": ["lenguajes", "saberes", "etica"]
+      }
+    },
+    {
+      "listNumber": 17,
+      "grades": {
+        "lenguajes:C": 9.4,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.5,
+        "lenguajes:K": 8.8,
+        "lenguajes:L": 9,
+        "lenguajes:T": 9,
+        "lenguajes:W": 10,
+        "saberes:C": 9.3,
+        "saberes:D": 8.3,
+        "saberes:I": 0,
+        "saberes:J": 0,
+        "saberes:K": 9.3,
+        "saberes:L": 10,
+        "saberes:M": 10,
+        "saberes:N": 10,
+        "saberes:T": 8,
+        "saberes:U": 8.5,
+        "etica:C": 9.4,
+        "etica:I": 9,
+        "etica:J": 7,
+        "etica:K": 7.8,
+        "etica:L": 10,
+        "etica:T": 8.5,
+        "humano:C": 9,
+        "humano:I": 9.5,
+        "humano:J": 10,
+        "humano:K": 7,
+        "humano:L": 8.7,
+        "humano:T": 9,
+        "humano:W": 9
+      },
+      "overrides": {
+        "lenguajes": 10,
+        "saberes": 9
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.4855,
+          "rounded": 9,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 8.185,
+          "rounded": 8,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.94,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 8.972,
+          "rounded": 9,
+          "final": 9
+        },
+        "generalAverage": 9.3,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 18,
+      "grades": {
+        "lenguajes:C": 9.8,
+        "lenguajes:I": 10,
+        "lenguajes:J": 10,
+        "lenguajes:K": 9.8,
+        "lenguajes:L": 10,
+        "lenguajes:T": 10,
+        "lenguajes:W": 10,
+        "saberes:C": 9.7,
+        "saberes:D": 9.8,
+        "saberes:I": 10,
+        "saberes:J": 10,
+        "saberes:K": 9.6,
+        "saberes:L": 8.9,
+        "saberes:M": 10,
+        "saberes:N": 9.5,
+        "saberes:T": 10,
+        "saberes:U": 10,
+        "etica:C": 9.6,
+        "etica:I": 10,
+        "etica:J": 8.5,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 9.5,
+        "humano:C": 9.8,
+        "humano:I": 9.9,
+        "humano:J": 10,
+        "humano:K": 9,
+        "humano:L": 10,
+        "humano:T": 10,
+        "humano:W": 10
+      },
+      "overrides": {},
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.923,
+          "rounded": 10,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 9.808333333,
+          "rounded": 10,
+          "final": 10
+        },
+        "etica": {
+          "calculated": 9.575,
+          "rounded": 10,
+          "final": 10
+        },
+        "humano": {
+          "calculated": 9.8915,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 10,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 19,
+      "grades": {
+        "lenguajes:C": 9.1,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.9,
+        "lenguajes:K": 5.5,
+        "lenguajes:L": 10,
+        "lenguajes:T": 8.5,
+        "lenguajes:W": 10,
+        "saberes:C": 8.3,
+        "saberes:D": 9.1,
+        "saberes:I": 10,
+        "saberes:J": 8,
+        "saberes:K": 10,
+        "saberes:L": 7.8,
+        "saberes:M": 10,
+        "saberes:N": 6,
+        "saberes:T": 9,
+        "saberes:U": 8,
+        "etica:C": 9.3,
+        "etica:I": 10,
+        "etica:J": 9.4,
+        "etica:K": 10,
+        "etica:L": 10,
+        "etica:T": 7,
+        "humano:C": 8.8,
+        "humano:I": 10,
+        "humano:J": 10,
+        "humano:K": 8,
+        "humano:L": 10,
+        "humano:T": 10,
+        "humano:W": 10
+      },
+      "overrides": {
+        "lenguajes": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 9.209,
+          "rounded": 9,
+          "final": 10
+        },
+        "saberes": {
+          "calculated": 8.626666667,
+          "rounded": 9,
+          "final": 9
+        },
+        "etica": {
+          "calculated": 8.72,
+          "rounded": 9,
+          "final": 9
+        },
+        "humano": {
+          "calculated": 9.51,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 9.5,
+        "lowFields": []
+      }
+    },
+    {
+      "listNumber": 20,
+      "grades": {
+        "lenguajes:C": 8.3,
+        "lenguajes:I": 10,
+        "lenguajes:J": 9.2,
+        "lenguajes:K": 9.1,
+        "lenguajes:L": 10,
+        "lenguajes:T": 8,
+        "lenguajes:W": 10,
+        "saberes:C": 9.7,
+        "saberes:D": 8.1,
+        "saberes:I": 9.5,
+        "saberes:J": 8,
+        "saberes:K": 8.2,
+        "saberes:L": 5,
+        "saberes:M": 4,
+        "saberes:N": 9,
+        "saberes:T": 6,
+        "saberes:U": 8,
+        "etica:C": 8.7,
+        "etica:I": 9.4,
+        "etica:J": 9.4,
+        "etica:K": 9,
+        "etica:L": 10,
+        "etica:T": 8,
+        "humano:C": 9.5,
+        "humano:I": 9.9,
+        "humano:J": 10,
+        "humano:K": 9,
+        "humano:L": 10,
+        "humano:T": 9,
+        "humano:W": 10
+      },
+      "overrides": {
+        "etica": 10
+      },
+      "expected": {
+        "lenguajes": {
+          "calculated": 8.9255,
+          "rounded": 9,
+          "final": 9
+        },
+        "saberes": {
+          "calculated": 8.006666667,
+          "rounded": 8,
+          "final": 8
+        },
+        "etica": {
+          "calculated": 8.64,
+          "rounded": 9,
+          "final": 10
+        },
+        "humano": {
+          "calculated": 9.5765,
+          "rounded": 10,
+          "final": 10
+        },
+        "generalAverage": 9.3,
+        "lowFields": []
+      }
+    }
+  ]
+}

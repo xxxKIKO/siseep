@@ -22,6 +22,7 @@ import { GroupsService } from '../groups/groups.service';
 import { Period } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
 import { Student } from '../students/student.schema';
+import { SummaryCache } from '../summary/summary-cache.service';
 import { ActivitiesService } from './activities.service';
 import { Activity } from './activity.schema';
 import { Grade } from './grade.schema';
@@ -59,6 +60,7 @@ export class GradesService {
     private readonly activities: ActivitiesService,
     private readonly groups: GroupsService,
     private readonly audit: AuditService,
+    private readonly summaryCache: SummaryCache,
   ) {}
 
   /** The group's active list by N/L with each student's grade (or null) in this activity. */
@@ -245,6 +247,8 @@ export class GradesService {
         .exec();
     });
 
+    // The live summary of the group changed.
+    this.summaryCache.invalidateGroup(activity.groupId.toString());
     return { saved: saved.map((g) => ({ studentId: g.studentId.toString(), ...toValue(g) })) };
   }
 

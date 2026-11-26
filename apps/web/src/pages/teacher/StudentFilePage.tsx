@@ -14,6 +14,7 @@ import { formatGrade } from '@/lib/capture';
 import { formatDate } from '@/lib/dates';
 import { COMPONENT_LABELS, SUBJECT_LABELS } from '@/lib/labels';
 import { NoteDialog } from './NoteDialog';
+import { StudentSummaryBars } from './StudentSummaryBars';
 import { NotesList } from './NotesList';
 
 /** /maestro/grupos/:groupId/alumnos/:studentId — grades of the period by field + notes. */
@@ -62,6 +63,7 @@ export function StudentFilePage() {
       />
       <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
         <section aria-labelledby="grades-title" className="flex flex-col gap-3">
+          {homeroom ? <StudentSummaryBars studentId={studentId} periodId={periodId} /> : null}
           <h2 id="grades-title" className="text-lg font-semibold">
             Calificaciones del periodo
           </h2>
@@ -102,9 +104,6 @@ export function StudentFilePage() {
               </div>
             </Card>
           ))}
-          <p className="text-xs text-muted-foreground">
-            Los promedios por campo llegan con el motor de cálculo.
-          </p>
         </section>
         {homeroom ? (
           <section aria-labelledby="notes-title" className="flex flex-col gap-3">

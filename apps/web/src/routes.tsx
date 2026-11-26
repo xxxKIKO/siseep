@@ -18,9 +18,11 @@ import { SchoolYearsPage } from '@/pages/admin/SchoolYearsPage';
 import { StudentsPage } from '@/pages/admin/StudentsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { ComingSoonPage } from '@/pages/ComingSoonPage';
+import { DirectorDashboardPage } from '@/pages/director/DirectorDashboardPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { CapturePage } from '@/pages/teacher/capture/CapturePage';
 import { StudentFilePage } from '@/pages/teacher/StudentFilePage';
+import { GroupSummaryPage } from '@/pages/teacher/GroupSummaryPage';
 import { TeacherGroupPage } from '@/pages/teacher/TeacherGroupPage';
 import { TeacherHomePage } from '@/pages/teacher/TeacherHomePage';
 
@@ -38,10 +40,14 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
     { path: 'permisos', element: <GrantsPage /> },
     { path: 'importar', element: <ImportPage /> },
   ],
-  DIRECTOR: [{ index: true, element: <ComingSoonPage role="DIRECTOR" /> }],
+  DIRECTOR: [
+    { index: true, element: <DirectorDashboardPage /> },
+    { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage readOnly /> },
+  ],
   TEACHER: [
     { index: true, element: <TeacherHomePage /> },
     { path: 'grupos/:groupId', element: <TeacherGroupPage /> },
+    { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage /> },
     { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
     { path: 'actividades/:activityId', element: <CapturePage /> },
   ],

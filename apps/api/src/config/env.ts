@@ -16,6 +16,8 @@ export const envSchema = z.object({
   /** Access token lifetime in seconds (15 minutes by default). */
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  /** Seconds the previous refresh secret stays valid after a rotation (lost responses). */
+  REFRESH_REUSE_GRACE_SECONDS: z.coerce.number().int().min(0).max(300).default(60),
   COOKIE_SECURE: booleanString.default(true),
 
   /** Comma-separated list of origins allowed by CORS. */

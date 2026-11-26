@@ -14,6 +14,13 @@ export class Session {
   @Prop({ required: true })
   tokenHash!: string;
 
+  /** Secret replaced by the last rotation, accepted during the reuse grace period. */
+  @Prop({ type: String, default: null })
+  previousTokenHash!: string | null;
+
+  @Prop({ type: Date, default: null })
+  rotatedAt!: Date | null;
+
   @Prop({ default: '' })
   userAgent!: string;
 
