@@ -117,23 +117,25 @@ export function AppLayout() {
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <ul className="mx-auto flex max-w-md">
-          {items.map((item) => (
-            <li key={item.to} className="flex-1">
-              <NavLink
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    'flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-medium',
-                    isActive ? 'text-primary' : 'text-muted-foreground',
-                  )
-                }
-              >
-                <item.icon className="size-6" aria-hidden />
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
+          {items
+            .filter((item) => item.mobile)
+            .map((item) => (
+              <li key={item.to} className="flex-1">
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-medium',
+                      isActive ? 'text-primary' : 'text-muted-foreground',
+                    )
+                  }
+                >
+                  <item.icon className="size-6" aria-hidden />
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
         </ul>
       </nav>
     </div>

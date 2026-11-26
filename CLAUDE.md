@@ -10,10 +10,16 @@ nada de etapas posteriores a la que se pide.
 apps/
   api/                 NestJS 11 + Mongoose 8. Un módulo por dominio en src/<dominio>/
     src/auth/          login, refresh con rotación, guards globales (JwtAuthGuard, PoliciesGuard)
-    src/common/        filtro global de errores, decoradores (@Public, @CheckPolicies, @CurrentUser)
+    src/access/        AbilityFactory: roles + permisos especiales + asignaciones → ability CASL
+    src/common/        errores, decoradores (@Public, @CheckPolicies, @CurrentActor), scope.ts
     src/config/        validación zod del .env (env.ts)
+    src/database/      ModelsModule: registra todos los modelos una vez (global)
+    src/<dominio>/     schools, school-years (+ periods, grading scheme), groups, students,
+                       activities, permission-grants, users (admin), imports (Excel)
     src/scripts/       seed.ts
+    scripts/           anonymize-workbook.mjs (genera el fixture anonimizado del Excel)
     test/              e2e con Jest + Supertest + mongodb-memory-server (replica set)
+    test/fixtures/     Excel del 5°B anonimizado (nombres y observaciones ficticios)
     Dockerfile         imagen de producción (incluye Chromium para Puppeteer)
   web/                 React 19 + Vite + Tailwind 4 + shadcn/ui
     src/auth/          AuthProvider, guards de rutas por rol, selector de rol
@@ -40,13 +46,13 @@ docs/                  plan.md (especificación) y deploy.md (staging)
 | `pnpm format`                                               | Prettier en todo el repo                                                                                 |
 | `pnpm --filter @siseep/api test`                            | Solo pruebas de la API                                                                                   |
 
-- **Mongo local**: se usa el MongoDB que ya corre en `127.0.0.1:27017`, compartido con otros
-  proyectos; SISEEP solo usa la base `siseep`. Hoy es **standalone** (sin transacciones): la
-  etapa 0 no las necesita, pero **antes de la etapa 1** hay que convertirlo a replica set
-  (`replication.replSetName: rs0` en `mongod.cfg` + `rs.initiate()`) y agregar
-  `?replicaSet=rs0` a `MONGODB_URI`. Las pruebas no dependen de esto: usan su propio replica
-  set en memoria. Con `DEV_START_MONGO=true`, `pnpm dev` levanta un Mongo propio (Docker en
-  27018 o `.data/mongo`).
+- **Mongo local**: se usa el MongoDB que ya corre en `127.0.0.1:27017` (replica set `rs0`,
+  necesario para las transacciones), compartido con otros proyectos; SISEEP solo usa la base
+  `siseep`. Las pruebas no dependen de él: usan su propio replica set en memoria. Con
+  `DEV_START_MONGO=true`, `pnpm dev` levanta un Mongo propio (Docker en 27018 o `.data/mongo`).
+- **Fixture del Excel**: si cambia el formato del Excel real, regenera el fixture con
+  `node apps/api/scripts/anonymize-workbook.mjs "<Excel real>" apps/api/test/fixtures/calificaciones-5B-periodo1.xlsx`.
+  El script falla si queda algún nombre real. El Excel original nunca se sube al repo.
 - **Varios proyectos a la vez**: los puertos se cambian en `.env` (`PORT` = API, `WEB_PORT` =
   web; si cambias `WEB_PORT`, ajusta `WEB_ORIGIN` y `WEB_URL`). `pnpm dev` avisa si un puerto
   está ocupado.
@@ -64,12 +70,20 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   de `packages/shared/src/abilities.ts`. El frontend solo oculta botones; el backend decide.
 - **Alcance de datos**: toda consulta se filtra por `schoolId` y por el alcance del usuario
   (grupos asignados, alumnos vinculados). Nunca confíes en ids del frontend sin revisar el alcance.
+  En los services: recibe `Actor` (`@CurrentActor()`), lista con `scopedQuery(actor, 'Group')`
+  (filtro Mongo generado de las mismas reglas CASL con `scopeFilter`) y, al cargar un registro,
+  `assertCan(actor.ability, 'update', 'Activity', doc)`. Las condiciones CASL usan ids como
+  string (`_id`, `schoolId`, `groupId`, `subjectKey`).
+- **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,
+  `component` y `subjectKey` de su actividad para filtrar por grupo y materia sin joins.
 - **Errores**: lanza `AppException` / `Errors.*` (`src/common/app.exception.ts`). La API responde
   siempre `{ statusCode, code, message, details? }` con `message` en español.
 - **Idioma**: textos de UI y mensajes de error en español de México; código, nombres de
   variables, colecciones y commits en inglés.
 - **Fechas**: se guardan en UTC; se muestran con `src/lib/dates.ts` (locale `es`, zona
-  `America/Mexico_City`).
+  `America/Mexico_City`). Las fechas de calendario (sin hora) viajan como `AAAA-MM-DD` y se
+  guardan a las 12:00 UTC (`dateOnlyToDate` / `dateToDateOnly` de shared) para que nunca se
+  recorran un día.
 - **Logs** sin datos personales: solo ids.
 - **Colores**: primario `#1F3A7A`; campos formativos en `FIELD_COLORS` (`packages/shared`).
 - **Mobile-first**: diseña a 360 px; barra inferior en celular, barra lateral desde 1024 px (`lg`).

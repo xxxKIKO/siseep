@@ -5,7 +5,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigService } from '../config/app-config.service';
 import { InvitationsModule } from '../invitations/invitations.module';
-import { PermissionGrantsModule } from '../permission-grants/permission-grants.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -45,7 +44,6 @@ import { SessionsService } from './sessions.service';
     }),
     UsersModule,
     InvitationsModule,
-    PermissionGrantsModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -57,5 +55,6 @@ import { SessionsService } from './sessions.service';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PoliciesGuard },
   ],
+  exports: [AuthService, SessionsService],
 })
 export class AuthModule {}

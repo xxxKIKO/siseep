@@ -46,6 +46,16 @@
     min-width: 320px;
   }
 
+  /* No spinner arrows on number inputs: they overlap units like "%" and are tiny on phones. */
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
   /* Visible keyboard focus everywhere. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;

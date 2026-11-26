@@ -92,20 +92,29 @@ export interface RequestOptions {
   signal?: AbortSignal;
   /** Send the access token and retry once after refreshing on 401. Default: true. */
   auth?: boolean;
+  /** `blob` for binary responses (images, files). Default: JSON. */
+  responseType?: 'json' | 'blob';
 }
 
 const NETWORK_ERROR_MESSAGE = 'No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.';
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData (file uploads) sets its own multipart Content-Type with the boundary.
+  const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (options.body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (options.auth !== false && accessToken) headers.Authorization = `Bearer ${accessToken}`;
   try {
     return await fetch(`${API_BASE_URL}${path}`, {
       method: options.method ?? 'GET',
       headers,
       credentials: 'include',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined
+          ? undefined
+          : isForm
+            ? (options.body as FormData)
+            : JSON.stringify(options.body),
       signal: options.signal,
     });
   } catch (error) {
@@ -146,6 +155,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!res.ok) throw await toApiError(res);
   if (res.status === 204) return undefined as T;
+  if (options.responseType === 'blob') return (await res.blob()) as T;
   return (await res.json()) as T;
 }
 
@@ -160,6 +170,10 @@ export const api = {
     apiRequest<T>(path, { ...options, method: 'PATCH', body }),
   delete: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     apiRequest<T>(path, { ...options, method: 'DELETE' }),
+  /** multipart/form-data upload (FormData body). */
+  upload: <T>(path: string, form: FormData, method: 'POST' | 'PUT' = 'POST') =>
+    apiRequest<T>(path, { method, body: form }),
+  blob: (path: string) => apiRequest<Blob>(path, { method: 'GET', responseType: 'blob' }),
 };
 
 /** Spanish message for any error, for toasts and form alerts. */

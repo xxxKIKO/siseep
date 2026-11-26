@@ -10,5 +10,12 @@ export interface RequestUser extends AuthUser {
 
 export interface AuthenticatedRequest extends Request {
   user: RequestUser;
+  /** Built by PoliciesGuard for every authenticated request. */
   ability?: AppAbility;
+}
+
+/** User + ability, the pair every scoped service method receives. */
+export interface Actor {
+  user: RequestUser;
+  ability: AppAbility;
 }

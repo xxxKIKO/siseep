@@ -31,6 +31,8 @@ export interface TestContext {
   connection: Connection;
   http: () => ReturnType<typeof request>;
   createUser: (roles: Role[], password?: string) => Promise<TestUser>;
+  /** Access token of the user (logs in once and caches it). */
+  token: (user: TestUser) => Promise<string>;
   close: () => Promise<void>;
 }
 
@@ -64,6 +66,7 @@ export async function createTestContext(): Promise<TestContext> {
   const school = await app.get(SchoolsService).upsertByName({ name: 'Escuela de prueba' });
   const passwords = app.get(PasswordService);
   const users = app.get(UsersService);
+  const tokens = new Map<string, string>();
 
   return {
     app,
@@ -82,6 +85,16 @@ export async function createTestContext(): Promise<TestContext> {
         roles,
       });
       return { id: user._id.toString(), email, password, schoolId: school._id.toString() };
+    },
+    async token(user) {
+      const cached = tokens.get(user.id);
+      if (cached) return cached;
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/auth/login')
+        .send({ email: user.email, password: user.password });
+      if (res.status !== 200) throw new Error(`login failed for ${user.email}: ${res.status}`);
+      tokens.set(user.id, res.body.accessToken as string);
+      return res.body.accessToken as string;
     },
     async close() {
       await connection.dropDatabase();

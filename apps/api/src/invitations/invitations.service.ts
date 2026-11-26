@@ -72,6 +72,26 @@ export class InvitationsService {
     };
   }
 
+  /** Staff invitations not used yet and not expired, newest first. */
+  async listPendingStaff(actor: RequestUser): Promise<StaffInvitationView[]> {
+    const invitations = await this.invitationModel
+      .find({
+        schoolId: actor.schoolId,
+        type: InvitationType.STAFF,
+        usedAt: null,
+        expiresAt: { $gt: new Date() },
+      })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+    return invitations.map((invitation) => ({
+      id: invitation._id.toString(),
+      email: invitation.email ?? '',
+      roles: invitation.roles,
+      expiresAt: invitation.expiresAt.toISOString(),
+    }));
+  }
+
   /** Finds a usable staff invitation by its code without consuming it. */
   async findUsableStaff(code: string): Promise<InvitationDocument> {
     const invitation = await this.invitationModel

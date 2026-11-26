@@ -104,10 +104,21 @@ export class AuthService {
   async forgotPassword(email: string): Promise<void> {
     const user = await this.users.findByEmail(email);
     if (!user || user.status !== UserStatus.ACTIVE) return;
+    try {
+      await this.sendPasswordReset(user, 'self');
+    } catch (_error) {
+      // Same response either way; the failure is logged by the mail service.
+      this.logger.warn('Password reset email could not be sent');
+    }
+  }
 
+  /**
+   * Creates a one-time reset link (only the latest one works) and emails it.
+   * `admin`: an administrator forced the reset; the email says so.
+   */
+  async sendPasswordReset(user: UserDocument, origin: 'self' | 'admin'): Promise<void> {
     const token = randomToken();
     const ttlMinutes = this.config.get('PASSWORD_RESET_TTL_MINUTES');
-    // Only the latest link works.
     await this.resetModel.updateMany(
       { userId: user._id, usedAt: null },
       { $set: { usedAt: new Date() } },
@@ -120,23 +131,23 @@ export class AuthService {
     });
 
     const link = `${this.config.get('WEB_URL')}/restablecer?token=${encodeURIComponent(token)}`;
-    try {
-      await this.mail.send({
-        to: user.email,
-        subject: 'Restablece tu contraseña',
-        text: [
-          `Hola, ${user.firstName}:`,
-          '',
-          'Recibimos una solicitud para restablecer tu contraseña. Abre este enlace para elegir una nueva:',
-          link,
-          '',
-          `El enlace vence en ${ttlMinutes} minutos. Si no lo pediste, ignora este correo.`,
-        ].join('\n'),
-      });
-    } catch (_error) {
-      // Same response either way; the failure is logged by the mail service.
-      this.logger.warn('Password reset email could not be sent');
-    }
+    const intro =
+      origin === 'admin'
+        ? 'La administración de la escuela pidió que elijas una nueva contraseña. Abre este enlace:'
+        : 'Recibimos una solicitud para restablecer tu contraseña. Abre este enlace para elegir una nueva:';
+    await this.mail.send({
+      to: user.email,
+      subject: 'Restablece tu contraseña',
+      text: [
+        `Hola, ${user.firstName}:`,
+        '',
+        intro,
+        link,
+        '',
+        `El enlace vence en ${ttlMinutes} minutos.` +
+          (origin === 'self' ? ' Si no lo pediste, ignora este correo.' : ''),
+      ].join('\n'),
+    });
   }
 
   async resetPassword(input: ResetPasswordInput): Promise<void> {
