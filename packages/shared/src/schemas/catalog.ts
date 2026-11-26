@@ -11,6 +11,7 @@ import {
   SUBJECT_KEYS,
   USER_STATUSES,
 } from '../enums';
+import type { PeriodStatus } from '../enums';
 import { objectIdSchema, personNameSchema } from './common';
 
 // ---------------------------------------------------------------------------
@@ -55,6 +56,8 @@ export const updateSchoolSchema = z
       .or(z.literal('')),
     city: optionalText(80),
     state: optionalText(80),
+    /** The homeroom teacher may close their group's period (otherwise only the admin). */
+    teacherCanClosePeriod: z.boolean(),
   })
   .partial();
 export type UpdateSchoolInput = z.infer<typeof updateSchoolSchema>;
@@ -67,6 +70,7 @@ export interface SchoolView {
   city?: string;
   state?: string;
   hasLogo: boolean;
+  teacherCanClosePeriod: boolean;
 }
 
 export const LOGO_MAX_BYTES = 1024 * 1024;
@@ -206,7 +210,7 @@ export interface GroupView {
   name: string;
   homeroomTeacher?: TeacherSummary;
   studentCount: number;
-  currentPeriod?: { id: string; number: number; name: string; status: string };
+  currentPeriod?: { id: string; number: number; name: string; status: PeriodStatus };
   assignments: AssignmentView[];
 }
 

@@ -271,7 +271,13 @@ export interface NoteView {
 // ---------------------------------------------------------------------------
 // Audit log
 // ---------------------------------------------------------------------------
-export const AUDIT_ENTITIES = ['grade', 'activity', 'note'] as const;
+export const AUDIT_ENTITIES = [
+  'grade',
+  'activity',
+  'note',
+  'periodResult',
+  'periodStatus',
+] as const;
 export type AuditEntity = (typeof AUDIT_ENTITIES)[number];
 
 export const auditQuerySchema = paginationQuerySchema.extend({

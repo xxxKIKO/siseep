@@ -1,6 +1,7 @@
 import { type Role, ROLE_HOME_PATHS } from '@siseep/shared';
 import {
   CalendarRange,
+  ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
   House,
@@ -41,6 +42,7 @@ export function navItemsFor(role: Role): NavItem[] {
       { to: '/admin/alumnos', label: 'Alumnos', icon: GraduationCap, mobile: true },
       { to: '/admin/importar', label: 'Importar', icon: FileSpreadsheet, mobile: true },
       { to: '/admin/ciclos', label: 'Ciclos y periodos', icon: CalendarRange },
+      { to: '/admin/periodos', label: 'Cierre de periodos', icon: ClipboardCheck },
       { to: '/admin/usuarios', label: 'Usuarios', icon: Users },
       { to: '/admin/permisos', label: 'Permisos especiales', icon: KeyRound },
       { to: '/admin/escuela', label: 'Escuela', icon: School },

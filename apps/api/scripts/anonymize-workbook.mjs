@@ -149,7 +149,12 @@ for (const real of realNames) {
 const observations = new Map(); // real text → fake text
 const obs = workbook.getWorksheet('Observaciones');
 for (let r = 4; r < 120; r++) {
-  const listNumber = obs.getCell(`A${r}`).value;
+  const rawNumber = obs.getCell(`A${r}`).value;
+  // N/L is usually a formula: use its cached result.
+  const listNumber =
+    rawNumber && typeof rawNumber === 'object' && 'result' in rawNumber
+      ? rawNumber.result
+      : rawNumber;
   const real = cellText(obs.getCell(`C${r}`).value);
   if (!real) continue;
   const labels = [...real.matchAll(/(^|\n)\s*([^:\n]{2,60}):/g)].map((m) => m[2].trim());

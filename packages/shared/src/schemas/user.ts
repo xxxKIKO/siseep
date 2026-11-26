@@ -16,6 +16,8 @@ export const userSchema = z.object({
   roles: z.array(roleSchema).min(1),
   status: userStatusSchema,
   lastLoginAt: z.string().nullable().optional(),
+  /** Has a logo for the report cards (teachers). */
+  hasLogo: z.boolean().optional(),
 });
 export type User = z.infer<typeof userSchema>;
 

@@ -9,6 +9,7 @@ import { Group, GroupSchema } from '../groups/group.schema';
 import { TeachingAssignment, TeachingAssignmentSchema } from '../groups/teaching-assignment.schema';
 import { ImportPreviewRecord, ImportPreviewSchema } from '../imports/import-preview.schema';
 import { PeriodResult, PeriodResultSchema } from '../period-results/period-result.schema';
+import { PeriodGroupStatus, PeriodGroupStatusSchema } from '../periods/period-group-status.schema';
 import { Period, PeriodSchema } from '../periods/period.schema';
 import {
   PermissionGrant,
@@ -37,6 +38,7 @@ const models = MongooseModule.forFeature([
   { name: ImportPreviewRecord.name, schema: ImportPreviewSchema },
   { name: AuditLog.name, schema: AuditLogSchema },
   { name: StudentNote.name, schema: StudentNoteSchema },
+  { name: PeriodGroupStatus.name, schema: PeriodGroupStatusSchema },
 ]);
 
 /** Registers every domain model once so any service can inject the models it needs. */

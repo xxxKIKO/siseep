@@ -13,6 +13,7 @@ import type { ClientSession, Connection, Model, Types } from 'mongoose';
 import { Errors } from '../common/app.exception';
 import type { Actor } from '../common/request-user';
 import { assertCan, oid, scopedQuery, studentFullName, teacherSummary } from '../common/scope';
+import { PeriodGroupStatus } from '../periods/period-group-status.schema';
 import { Period } from '../periods/period.schema';
 import { SchoolYear } from '../school-years/school-year.schema';
 import { Enrollment } from '../students/enrollment.schema';
@@ -34,6 +35,8 @@ export class GroupsService {
     @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<Enrollment>,
     @InjectModel(Student.name) private readonly studentModel: Model<Student>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(PeriodGroupStatus.name)
+    private readonly groupStatusModel: Model<PeriodGroupStatus>,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
@@ -252,7 +255,7 @@ export class GroupsService {
     if (groups.length === 0) return [];
     const groupIds = groups.map((g) => g._id);
     const yearIds = [...new Set(groups.map((g) => g.schoolYearId.toString()))].map((id) => oid(id));
-    const [years, periods, assignments, counts] = await Promise.all([
+    const [years, periods, assignments, counts, groupStatuses] = await Promise.all([
       this.yearModel
         .find({ _id: { $in: yearIds } })
         .lean()
@@ -277,7 +280,15 @@ export class GroupsService {
           { $group: { _id: '$groupId', n: { $sum: 1 } } },
         ])
         .exec(),
+      this.groupStatusModel
+        .find({ groupId: { $in: groupIds } }, { periodId: 1, groupId: 1, status: 1 })
+        .lean()
+        .exec(),
     ]);
+    // Each group may be further along than the period itself (stage 4: closing per group).
+    const statusOf = new Map(
+      groupStatuses.map((s) => [`${s.periodId.toString()}:${s.groupId.toString()}`, s.status]),
+    );
     const yearName = new Map(years.map((y) => [y._id.toString(), y.name]));
     const countBy = new Map(counts.map((c) => [c._id.toString(), c.n]));
     const today = new Date();
@@ -314,7 +325,9 @@ export class GroupsService {
                 id: current._id.toString(),
                 number: current.number,
                 name: current.name,
-                status: current.status,
+                status:
+                  statusOf.get(`${current._id.toString()}:${group._id.toString()}`) ??
+                  current.status,
               },
             }
           : {}),

@@ -153,6 +153,32 @@ export function SchoolPage() {
             <p className="text-center text-xs text-muted-foreground">PNG o JPG, máximo 1 MB.</p>
           </CardContent>
         </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Cierre de periodo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <label className="flex min-h-11 items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-5 shrink-0 accent-primary"
+                checked={school.data?.teacherCanClosePeriod ?? false}
+                disabled={update.isPending || school.isLoading}
+                onChange={(event) => update.mutate({ teacherCanClosePeriod: event.target.checked })}
+              />
+              <span>
+                <span className="font-medium">
+                  El maestro titular puede cerrar el periodo de su grupo
+                </span>
+                <span className="block text-muted-foreground">
+                  Si no se activa, el maestro solo envía a revisión y la administración cierra.
+                  Publicar y reabrir siguen siendo de la administración.
+                </span>
+              </span>
+            </label>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

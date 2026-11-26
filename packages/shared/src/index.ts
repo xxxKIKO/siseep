@@ -12,3 +12,4 @@ export * from './schemas/imports';
 export * from './schemas/capture';
 export * from './grading';
 export * from './schemas/summary';
+export * from './schemas/closing';

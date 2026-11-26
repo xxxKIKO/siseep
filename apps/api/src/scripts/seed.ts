@@ -9,6 +9,7 @@ import { PasswordService } from '../auth/password.service';
 import { AppConfigService } from '../config/app-config.service';
 import { AppConfigModule } from '../config/config.module';
 import { ModelsModule } from '../database/models.module';
+import { FilesModule } from '../files/files.module';
 import { SchoolsModule } from '../schools/schools.module';
 import { SchoolsService } from '../schools/schools.service';
 import { UsersModule } from '../users/users.module';
@@ -27,6 +28,7 @@ import { UsersService } from '../users/users.service';
       useFactory: (config: AppConfigService) => ({ uri: config.get('MONGODB_URI') }),
     }),
     ModelsModule,
+    FilesModule,
     SchoolsModule,
     UsersModule,
   ],

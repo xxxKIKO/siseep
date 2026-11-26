@@ -19,6 +19,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { GradingScheme } from '../grading-schemes/grading-scheme.schema';
 import type { GroupDocument } from '../groups/group.schema';
 import { GroupsService } from '../groups/groups.service';
+import { PeriodStatusService } from '../periods/period-status.service';
 import { Period, type PeriodDocument } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
 import { SummaryCache } from '../summary/summary-cache.service';
@@ -52,6 +53,7 @@ export class ActivitiesService {
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
     private readonly summaryCache: SummaryCache,
+    private readonly periodStatus: PeriodStatusService,
   ) {}
 
   // ---- reads -----------------------------------------------------------------
@@ -160,7 +162,7 @@ export class ActivitiesService {
   async update(id: string, input: UpdateActivityInput, actor: Actor): Promise<ActivityView> {
     const activity = await this.load(id, actor);
     assertCan(actor.ability, 'update', 'Activity', activity);
-    await this.assertPeriodOpen(activity.periodId);
+    await this.assertGroupOpen(activity.periodId, activity.groupId);
     if (input.name && input.name !== activity.name) {
       await this.assertNameFree(
         activity.groupId,
@@ -212,7 +214,7 @@ export class ActivitiesService {
   async remove(id: string, force: boolean, actor: Actor): Promise<void> {
     const activity = await this.load(id, actor);
     assertCan(actor.ability, 'delete', 'Activity', activity);
-    await this.assertPeriodOpen(activity.periodId);
+    await this.assertGroupOpen(activity.periodId, activity.groupId);
     const graded = await this.gradeModel.countDocuments({ activityId: activity._id });
     if (graded > 0 && !force) {
       throw new AppException(
@@ -244,9 +246,9 @@ export class ActivitiesService {
   }
 
   // ---- helpers -----------------------------------------------------------------
-  async assertPeriodOpen(periodId: Types.ObjectId): Promise<void> {
-    const period = await this.periodModel.findById(periodId, { status: 1 }).lean().exec();
-    if (period?.status !== 'OPEN') throw Errors.periodNotOpen();
+  /** Activities and grades only change while the group's period is OPEN. */
+  assertGroupOpen(periodId: Types.ObjectId, groupId: Types.ObjectId): Promise<void> {
+    return this.periodStatus.assertOpen(periodId, groupId);
   }
 
   private async openPeriodOf(periodId: string, group: GroupDocument): Promise<PeriodDocument> {
@@ -257,7 +259,7 @@ export class ActivitiesService {
     if (!period.schoolYearId.equals(group.schoolYearId)) {
       throw Errors.badRequest('El periodo no pertenece al ciclo escolar del grupo.');
     }
-    if (period.status !== 'OPEN') throw Errors.periodNotOpen();
+    await this.periodStatus.assertOpen(period._id, group._id);
     return period;
   }
 
