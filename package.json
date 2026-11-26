@@ -1,0 +1,38 @@
+{
+  "name": "siseep",
+  "private": true,
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:db": "node scripts/dev.mjs --db-only",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "seed": "pnpm --filter @siseep/shared build && pnpm --filter @siseep/api seed"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.4.3",
+    "prettier": "^3.10.1",
+    "turbo": "^2.11.13",
+    "typescript": "~5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "esbuild",
+      "mongodb-memory-server",
+      "@nestjs/core"
+    ]
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "version": "7.0.24"
+    }
+  }
+}

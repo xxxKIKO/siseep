@@ -1,0 +1,29 @@
+# Local development database: MongoDB 7 as a single-node replica set (rs0), required for
+# transactions. The healthcheck initiates the replica set on first start, so no manual step
+# is needed. Optional: by default local development uses the MongoDB already running on 27017.
+# To use this one instead, set DEV_START_MONGO=true and point MONGODB_URI to
+# mongodb://127.0.0.1:27018/siseep?replicaSet=rs0&directConnection=true
+services:
+  mongo:
+    image: mongo:7
+    command: ['--replSet', 'rs0', '--bind_ip_all', '--port', '27017']
+    ports:
+      - '27018:27017' # 27018 en el host para no chocar con otro MongoDB local
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Returns ok once the replica set is up; the first time it runs rs.initiate().
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }).ok }"
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

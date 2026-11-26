@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/dist-seed
+**/coverage
+**/.turbo
+.data
+.git
+.github
+.env
+.env.*
+!.env.example
+apps/web/*
+!apps/web/package.json
+docs
+*.log
