@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hoja de captura</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: 'Liberation Sans', Arial, Helvetica, sans-serif;
+        color: #172033;
+        font-size: 11pt;
+        margin: 0;
+      }
+      header {
+        border-bottom: 3px solid #1f3a7a;
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+      }
+      .school {
+        color: #1f3a7a;
+        font-weight: 700;
+        font-size: 13pt;
+        text-transform: uppercase;
+      }
+      .title { font-size: 15pt; font-weight: 700; margin-top: 4px; }
+      .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; font-size: 10.5pt; }
+      .meta b { color: #1f3a7a; }
+      .field-strip { height: 6px; background: {{fieldColor}}; margin-top: 8px; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th {
+        background: #1f3a7a;
+        color: #fff;
+        font-size: 10pt;
+        text-align: left;
+        padding: 6px 8px;
+      }
+      td { border: 1px solid #b9c2d3; padding: 0 8px; height: 30px; }
+      td.nl { width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
+      td.name { width: 46%; }
+      tr { page-break-inside: avoid; }
+      tbody tr:nth-child(even) td { background: #f4f6fa; }
+      footer { margin-top: 10px; font-size: 9pt; color: #5b6474; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="school">{{school}}</div>
+      <div class="title">Hoja de captura · Grupo {{group}}</div>
+      <div class="meta">
+        <span><b>Campo:</b> {{field}}</span>
+        <span><b>Actividad:</b> {{activity}}</span>
+        <span><b>Componente:</b> {{component}}</span>
+        <span><b>Fecha:</b> {{date}}</span>
+        <span><b>Docente:</b> {{teacher}}</span>
+      </div>
+      <div class="field-strip"></div>
+    </header>
+    <table>
+      <thead>
+        <tr>
+          <th>N/L</th>
+          <th>Alumno(a)</th>
+          <th>Calificación / anotaciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{rows}}
+      </tbody>
+    </table>
+    <footer>
+      NE = no entregó · NA = no aplica. Captura las calificaciones el mismo día en el sistema.
+    </footer>
+  </body>
+</html>

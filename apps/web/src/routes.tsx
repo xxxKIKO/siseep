@@ -19,6 +19,8 @@ import { StudentsPage } from '@/pages/admin/StudentsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { ComingSoonPage } from '@/pages/ComingSoonPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { CapturePage } from '@/pages/teacher/capture/CapturePage';
+import { StudentFilePage } from '@/pages/teacher/StudentFilePage';
 import { TeacherGroupPage } from '@/pages/teacher/TeacherGroupPage';
 import { TeacherHomePage } from '@/pages/teacher/TeacherHomePage';
 
@@ -40,6 +42,8 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
   TEACHER: [
     { index: true, element: <TeacherHomePage /> },
     { path: 'grupos/:groupId', element: <TeacherGroupPage /> },
+    { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
+    { path: 'actividades/:activityId', element: <CapturePage /> },
   ],
   GUARDIAN: [{ index: true, element: <ComingSoonPage role="GUARDIAN" /> }],
 };

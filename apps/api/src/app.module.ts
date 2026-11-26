@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AccessModule } from './access/access.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { AppConfigService } from './config/app-config.service';
@@ -15,7 +16,9 @@ import { HealthController } from './health/health.controller';
 import { ImportsModule } from './imports/imports.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MailModule } from './mail/mail.module';
+import { NotesModule } from './notes/notes.module';
 import { PermissionGrantsModule } from './permission-grants/permission-grants.module';
+import { ReportsModule } from './reports/reports.module';
 import { SchoolYearsModule } from './school-years/school-years.module';
 import { SchoolsModule } from './schools/schools.module';
 import { StudentsModule } from './students/students.module';
@@ -61,6 +64,7 @@ import { UsersModule } from './users/users.module';
     }),
     ModelsModule,
     AccessModule,
+    AuditModule,
     MailModule,
     SchoolsModule,
     UsersModule,
@@ -72,6 +76,8 @@ import { UsersModule } from './users/users.module';
     GroupsModule,
     StudentsModule,
     ActivitiesModule,
+    NotesModule,
+    ReportsModule,
     ImportsModule,
   ],
   controllers: [HealthController],

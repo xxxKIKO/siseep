@@ -25,6 +25,6 @@ export const CurrentActor = createParamDecorator(
   (_data: unknown, context: ExecutionContext): Actor => {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request.ability) throw new Error('PoliciesGuard did not build the ability');
-    return { user: request.user, ability: request.ability };
+    return { user: request.user, ability: request.ability, ip: request.ip };
   },
 );
