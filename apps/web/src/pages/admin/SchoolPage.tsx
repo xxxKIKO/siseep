@@ -1,0 +1,159 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LOGO_MAX_BYTES, updateSchoolSchema } from '@siseep/shared';
+import { ImageUp, LoaderCircle } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { useSchool, useSchoolLogo, useUpdateSchool, useUploadLogo } from '@/api/catalog';
+import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { fieldProps } from '@/lib/form';
+
+export function SchoolPage() {
+  const school = useSchool();
+  const logo = useSchoolLogo(Boolean(school.data?.hasLogo));
+  const update = useUpdateSchool();
+  const upload = useUploadLogo();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const form = useForm({
+    resolver: zodResolver(updateSchoolSchema),
+    defaultValues: { name: '', shortName: '', cct: '', city: '', state: '' },
+  });
+  const { errors } = form.formState;
+
+  useEffect(() => {
+    if (school.data) {
+      form.reset({
+        name: school.data.name,
+        shortName: school.data.shortName ?? '',
+        cct: school.data.cct ?? '',
+        city: school.data.city ?? '',
+        state: school.data.state ?? '',
+      });
+    }
+  }, [school.data, form]);
+
+  const onFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      toast.error('El logo debe ser una imagen PNG o JPG.');
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      toast.error('El logo debe pesar máximo 1 MB.');
+      return;
+    }
+    upload.mutate(file);
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title="Escuela"
+        description="Estos datos aparecen en las boletas."
+        back={{ to: '/admin', label: 'Administración' }}
+      />
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Datos generales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              noValidate
+              className="flex flex-col gap-4"
+              onSubmit={form.handleSubmit((values) => update.mutate(values))}
+            >
+              <FormField id="name" label="Nombre oficial" error={errors.name?.message}>
+                <Input {...fieldProps('name', errors.name?.message)} {...form.register('name')} />
+              </FormField>
+              <FormField id="shortName" label="Nombre corto" error={errors.shortName?.message}>
+                <Input
+                  {...fieldProps('shortName', errors.shortName?.message)}
+                  {...form.register('shortName')}
+                />
+              </FormField>
+              <FormField
+                id="cct"
+                label="Clave de centro de trabajo (CCT)"
+                error={errors.cct?.message}
+              >
+                <Input
+                  {...fieldProps('cct', errors.cct?.message)}
+                  autoCapitalize="characters"
+                  placeholder="06DPR0000X"
+                  {...form.register('cct')}
+                />
+              </FormField>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField id="city" label="Ciudad" error={errors.city?.message}>
+                  <Input {...fieldProps('city', errors.city?.message)} {...form.register('city')} />
+                </FormField>
+                <FormField id="state" label="Estado" error={errors.state?.message}>
+                  <Input
+                    {...fieldProps('state', errors.state?.message)}
+                    {...form.register('state')}
+                  />
+                </FormField>
+              </div>
+              <Button
+                type="submit"
+                className="self-start"
+                disabled={update.isPending || school.isLoading}
+              >
+                {update.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
+                Guardar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Logo</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <div className="flex size-40 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/40">
+              {logo.data ? (
+                <img
+                  src={logo.data}
+                  alt="Logo de la escuela"
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <span className="px-4 text-center text-sm text-muted-foreground">Sin logo</span>
+              )}
+            </div>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/png,image/jpeg"
+              className="sr-only"
+              aria-label="Elegir logo"
+              onChange={(event) => {
+                onFile(event.target.files?.[0]);
+                event.target.value = '';
+              }}
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInput.current?.click()}
+              disabled={upload.isPending}
+            >
+              {upload.isPending ? (
+                <LoaderCircle className="animate-spin" aria-hidden />
+              ) : (
+                <ImageUp aria-hidden />
+              )}
+              {school.data?.hasLogo ? 'Cambiar logo' : 'Subir logo'}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">PNG o JPG, máximo 1 MB.</p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

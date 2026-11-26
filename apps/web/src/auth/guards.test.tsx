@@ -2,7 +2,7 @@ import type { Role, User } from '@siseep/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation, useRoutes } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '@/routes';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
@@ -34,6 +34,29 @@ function AppRoutes() {
 
 const currentLocation = () => screen.getByTestId('location').textContent;
 
+/** Text that only the home of each portal shows. */
+const HOME_MARKERS: Record<Role, string> = {
+  ADMIN: 'Importar Excel',
+  DIRECTOR: 'Próximamente',
+  TEACHER: 'Aún no tienes grupos asignados. Pide a la administración que te asigne a tu grupo.',
+  GUARDIAN: 'Próximamente',
+};
+const findHome = (role: Role) => screen.findByText(HOME_MARKERS[role]);
+
+// Portal homes load data: the API answers with empty lists.
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    ),
+  );
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 function renderAt(path: string, user: User | null) {
   const auth: AuthContextValue = {
     status: user ? 'authenticated' : 'anonymous',
@@ -60,9 +83,9 @@ describe('role-protected routes', () => {
     ['DIRECTOR', '/director'],
     ['TEACHER', '/maestro'],
     ['GUARDIAN', '/padres'],
-  ])('%s opens their own home with "Próximamente"', async (role, path) => {
+  ])('%s opens their own home', async (role, path) => {
     renderAt(path, userWith([role]));
-    expect(await screen.findByText('Próximamente')).toBeInTheDocument();
+    expect(await findHome(role)).toBeInTheDocument();
     expect(currentLocation()).toBe(path);
   });
 
@@ -70,7 +93,7 @@ describe('role-protected routes', () => {
     'a TEACHER who opens %s is sent back to /maestro',
     async (path) => {
       renderAt(path, userWith(['TEACHER']));
-      expect(await screen.findByText('Próximamente')).toBeInTheDocument();
+      expect(await findHome('TEACHER')).toBeInTheDocument();
       expect(currentLocation()).toBe('/maestro');
     },
   );
@@ -83,7 +106,24 @@ describe('role-protected routes', () => {
 
   it('opens the highest-priority portal from / for a user with several roles', async () => {
     renderAt('/', userWith(['TEACHER', 'DIRECTOR']));
-    expect(await screen.findByText('Próximamente')).toBeInTheDocument();
+    expect(await findHome('DIRECTOR')).toBeInTheDocument();
+    expect(currentLocation()).toBe('/director');
+  });
+});
+
+describe('admin screens (stage 1)', () => {
+  it.each(['/admin/grupos', '/admin/importar', '/admin/usuarios', '/admin/permisos'])(
+    'a TEACHER who opens %s is sent back to /maestro',
+    async (path) => {
+      renderAt(path, userWith(['TEACHER']));
+      expect(await findHome('TEACHER')).toBeInTheDocument();
+      expect(currentLocation()).toBe('/maestro');
+    },
+  );
+
+  it('a DIRECTOR cannot open the admin screens either', async () => {
+    renderAt('/admin/alumnos', userWith(['DIRECTOR']));
+    expect(await findHome('DIRECTOR')).toBeInTheDocument();
     expect(currentLocation()).toBe('/director');
   });
 });
@@ -96,7 +136,7 @@ describe('role switcher', () => {
 
   it('is hidden for users with a single role', async () => {
     renderAt('/maestro', userWith(['TEACHER']));
-    await screen.findByText('Próximamente');
+    await findHome('TEACHER');
     expect(screen.queryByRole('button', { name: /Cambiar de rol/ })).not.toBeInTheDocument();
   });
 });

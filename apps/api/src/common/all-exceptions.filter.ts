@@ -22,6 +22,7 @@ const DEFAULTS: Record<number, { code: ErrorCode; message: string }> = {
     code: ErrorCode.CONFLICT,
     message: 'El registro ya existe o cambió mientras lo editabas.',
   },
+  413: { code: ErrorCode.INVALID_FILE, message: 'El archivo es demasiado grande.' },
   429: {
     code: ErrorCode.TOO_MANY_REQUESTS,
     message: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',

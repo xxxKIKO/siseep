@@ -58,5 +58,18 @@ export const Errors = {
       ErrorCode.FORBIDDEN,
       'No tienes permiso para realizar esta acción.',
     ),
-  conflict: (message: string) => new AppException(HttpStatus.CONFLICT, ErrorCode.CONFLICT, message),
+  conflict: (message: string, details?: unknown) =>
+    new AppException(HttpStatus.CONFLICT, ErrorCode.CONFLICT, message, details),
+  notFound: (message = 'No encontramos lo que buscas.') =>
+    new AppException(HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND, message),
+  badRequest: (message: string, details?: unknown) =>
+    new AppException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST, message, details),
+  invalidFile: (message: string) =>
+    new AppException(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_FILE, message),
+  periodNotOpen: () =>
+    new AppException(
+      HttpStatus.CONFLICT,
+      ErrorCode.PERIOD_NOT_OPEN,
+      'El periodo no está abierto: ya no se pueden cambiar sus actividades.',
+    ),
 };

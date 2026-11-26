@@ -39,8 +39,8 @@ describe('defineAbilityFor', () => {
 
   it('lets every user read only their own profile', () => {
     const ability = defineAbilityFor(teacher);
-    expect(ability.can('read', subject('User', { id: teacher.id }))).toBe(true);
-    expect(ability.can('read', subject('User', { id: admin.id }))).toBe(false);
+    expect(ability.can('read', subject('User', { _id: teacher.id }))).toBe(true);
+    expect(ability.can('read', subject('User', { _id: admin.id }))).toBe(false);
   });
 
   it('applies an active GROUP grant only to that group', () => {
