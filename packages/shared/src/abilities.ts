@@ -111,7 +111,7 @@ const SCHOOL_READABLE: SubjectName[] = [
   'AuditLog',
 ];
 /** Day-to-day work of the homeroom teacher on their group. */
-const HOMEROOM_WORK: SubjectName[] = ['Activity', 'Grade', 'StudentNote', 'PeriodResult'];
+const HOMEROOM_WORK: SubjectName[] = ['Activity', 'Grade', 'PeriodResult'];
 /** A subject teacher (English, PE) only works on activities and grades of their subject. */
 const SUBJECT_WORK: SubjectName[] = ['Activity', 'Grade'];
 const CRUD: Action[] = ['create', 'read', 'update', 'delete'];
@@ -123,7 +123,8 @@ const CRUD: Action[] = ['create', 'read', 'update', 'delete'];
  * - ADMIN: everything.
  * - DIRECTOR: reads the whole school; writes only through an active permission grant.
  * - TEACHER: reads and writes in the groups they teach. A SUBJECT assignment is limited to its
- *   `subjectKey` (the English teacher never sees Saberes).
+ *   `subjectKey` (the English teacher never sees Saberes). Homeroom teachers read every note of
+ *   their group but only edit their own; each teacher reads the audit log of their groups.
  * - GUARDIAN: nothing in the school catalogs (their portal arrives in stage 5).
  *
  * The second argument also accepts a plain array of grants (stage 0 signature).
@@ -166,8 +167,13 @@ export function defineAbilityFor(
       can('read', ['Enrollment', 'TeachingAssignment'], { groupId, schoolId });
       if (assignment.scope === 'HOMEROOM') {
         can(CRUD, HOMEROOM_WORK, { groupId, schoolId });
+        // Notes: everyone's notes of the group are readable; only your own are editable.
+        can(['create', 'read'], 'StudentNote', { groupId, schoolId });
+        can(['update', 'delete'], 'StudentNote', { groupId, schoolId, authorId: user.id });
+        can('read', 'AuditLog', { groupId, schoolId });
       } else if (assignment.subjectKey) {
         can(CRUD, SUBJECT_WORK, { groupId, schoolId, subjectKey: assignment.subjectKey });
+        can('read', 'AuditLog', { groupId, schoolId, subjectKey: assignment.subjectKey });
       }
     }
   }

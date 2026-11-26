@@ -35,6 +35,18 @@ export const envSchema = z.object({
     .default(15 * 60_000),
 
   INVITATION_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  /** Hours after creation before guardians can see an activity (time to fix mistakes). */
+  ACTIVITY_GUARDIAN_DELAY_HOURS: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 30)
+    .default(24),
+
+  /** Chrome/Chromium for PDFs. Empty: PUPPETEER_EXECUTABLE_PATH or auto-detect. */
+  CHROMIUM_PATH: z.string().optional(),
+  /** PDFs generated at the same time (Puppeteer is memory hungry). */
+  PDF_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(2),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(60),
 
   MAIL_DRIVER: z.enum(['console', 'resend']).default('console'),

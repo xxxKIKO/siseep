@@ -15,7 +15,9 @@ apps/
     src/config/        validación zod del .env (env.ts)
     src/database/      ModelsModule: registra todos los modelos una vez (global)
     src/<dominio>/     schools, school-years (+ periods, grading scheme), groups, students,
-                       activities, permission-grants, users (admin), imports (Excel)
+                       activities (+ grades), notes, audit, reports (PDF), permission-grants,
+                       users (admin), imports (Excel)
+    src/reports/templates/  plantillas HTML de los PDF (Puppeteer)
     src/scripts/       seed.ts
     scripts/           anonymize-workbook.mjs (genera el fixture anonimizado del Excel)
     test/              e2e con Jest + Supertest + mongodb-memory-server (replica set)
@@ -26,6 +28,8 @@ apps/
     src/lib/           api-client (interceptor de refresh), fechas (es, America/Mexico_City)
     src/components/ui/ componentes estilo shadcn (se copian, no se instalan)
     src/pages/         pantallas; rutas en src/routes.tsx
+    src/pages/teacher/capture/  pantalla Capturar (useCapture: guardado, cola offline, conflictos)
+    e2e/               Playwright (iPhone 12): Mongo en memoria + API compilada + vite preview
 packages/
   shared/              esquemas zod, tipos, enums (sección 4), colores, reglas CASL (defineAbilityFor)
   eslint-config/       ESLint compartido (base y react)
@@ -45,6 +49,7 @@ docs/                  plan.md (especificación) y deploy.md (staging)
 | `pnpm lint` / `pnpm typecheck` / `pnpm test` / `pnpm build` | Lo mismo que corre la CI                                                                                 |
 | `pnpm format`                                               | Prettier en todo el repo                                                                                 |
 | `pnpm --filter @siseep/api test`                            | Solo pruebas de la API                                                                                   |
+| `pnpm test:e2e`                                             | Playwright en viewport de iPhone 12 (compila shared y api; usa tu Chrome local, en CI Chromium)          |
 
 - **Mongo local**: se usa el MongoDB que ya corre en `127.0.0.1:27017` (replica set `rs0`,
   necesario para las transacciones), compartido con otros proyectos; SISEEP solo usa la base
@@ -74,6 +79,16 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   (filtro Mongo generado de las mismas reglas CASL con `scopeFilter`) y, al cargar un registro,
   `assertCan(actor.ability, 'update', 'Activity', doc)`. Las condiciones CASL usan ids como
   string (`_id`, `schoolId`, `groupId`, `subjectKey`).
+- **Bitácora**: todo cambio de calificaciones, actividades y notas se registra con
+  `AuditService.record(actor, entries, session)` **dentro de la misma transacción** que el cambio
+  (antes/después). No uses interceptores para esto.
+- **Calificaciones**: el lote `PUT /activities/:id/grades` es transaccional y acepta
+  `expectedUpdatedAt` por alumno (control de concurrencia: 409 `GRADE_CONFLICT` con el valor
+  actual). La web resuelve conflictos con "gana el servidor" y avisa.
+- **Notas de salud**: nunca visibles para padres. Usa `normalizeNoteVisibility` al guardar e
+  `isNoteVisibleToGuardians` en cualquier lectura para padres (ambas en `packages/shared`).
+- **PDF**: `PdfService` (puppeteer-core, una instancia, cola `PDF_CONCURRENCY`); plantillas en
+  `src/reports/templates/*.html` con `{{clave}}` escapado por `renderTemplate`.
 - **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,
   `component` y `subjectKey` de su actividad para filtrar por grupo y materia sin joins.
 - **Errores**: lanza `AppException` / `Errors.*` (`src/common/app.exception.ts`). La API responde

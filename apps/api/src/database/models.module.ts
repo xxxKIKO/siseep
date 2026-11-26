@@ -1,6 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Activity, ActivitySchema } from '../activities/activity.schema';
+import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema';
+import { StudentNote, StudentNoteSchema } from '../notes/student-note.schema';
 import { Grade, GradeSchema } from '../activities/grade.schema';
 import { GradingScheme, GradingSchemeSchema } from '../grading-schemes/grading-scheme.schema';
 import { Group, GroupSchema } from '../groups/group.schema';
@@ -33,6 +35,8 @@ const models = MongooseModule.forFeature([
   { name: PeriodResult.name, schema: PeriodResultSchema },
   { name: PermissionGrant.name, schema: PermissionGrantSchema },
   { name: ImportPreviewRecord.name, schema: ImportPreviewSchema },
+  { name: AuditLog.name, schema: AuditLogSchema },
+  { name: StudentNote.name, schema: StudentNoteSchema },
 ]);
 
 /** Registers every domain model once so any service can inject the models it needs. */

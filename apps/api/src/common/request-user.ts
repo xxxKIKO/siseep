@@ -18,4 +18,6 @@ export interface AuthenticatedRequest extends Request {
 export interface Actor {
   user: RequestUser;
   ability: AppAbility;
+  /** Client IP, stored in the audit log. */
+  ip?: string;
 }

@@ -1,10 +1,30 @@
-import type { Component, EnrollmentStatus, PeriodStatus, SubjectKey } from '@siseep/shared';
+import type {
+  Component,
+  EnrollmentStatus,
+  FieldKey,
+  PeriodStatus,
+  SubjectKey,
+} from '@siseep/shared';
 
 export const COMPONENT_LABELS: Record<Component, string> = {
   DESEMPENO: 'Desempeño',
   PROYECTO: 'Proyectos',
   EXAMEN: 'Exámenes',
   COMPLEMENTARIA: 'Complementaria',
+};
+
+/** Field → its complementary subject (Inglés in Lenguajes, Ed. Física in De lo humano). */
+export const COMPLEMENTARY_BY_FIELD: Partial<Record<FieldKey, SubjectKey>> = {
+  lenguajes: 'ingles',
+  humano: 'ed_fisica',
+};
+
+/** Short field names for tabs and chips. */
+export const FIELD_SHORT_LABELS: Record<FieldKey, string> = {
+  lenguajes: 'Lenguajes',
+  saberes: 'Saberes',
+  etica: 'Ética',
+  humano: 'De lo humano',
 };
 
 export const SUBJECT_LABELS: Record<SubjectKey, string> = {

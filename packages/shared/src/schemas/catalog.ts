@@ -2,9 +2,7 @@ import { z } from 'zod';
 import { DATE_ONLY_REGEX } from '../dates';
 import {
   ASSIGNMENT_SCOPES,
-  COMPONENTS,
   ENROLLMENT_STATUSES,
-  FIELD_KEYS,
   GRANT_SCOPE_TYPES,
   GRADE_STATUSES,
   PERIOD_STATUSES,
@@ -363,35 +361,6 @@ export interface PermissionGrantView {
   grantedBy: TeacherSummary;
   reason?: string;
   createdAt: string;
-}
-
-// ---------------------------------------------------------------------------
-// Activities (stage 1: read and fix imported names/dates; capture is stage 2)
-// ---------------------------------------------------------------------------
-export const activityListQuerySchema = z.object({
-  periodId: objectIdSchema,
-  fieldKey: z.enum(FIELD_KEYS).optional(),
-});
-export type ActivityListQuery = z.infer<typeof activityListQuerySchema>;
-
-export const updateActivitySchema = z
-  .object({
-    name: z.string().trim().min(1, { message: 'Escribe el nombre' }).max(120),
-    date: dateOnlySchema,
-  })
-  .partial();
-export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
-
-export interface ActivityView {
-  id: string;
-  groupId: string;
-  periodId: string;
-  fieldKey: (typeof FIELD_KEYS)[number];
-  component: (typeof COMPONENTS)[number];
-  subjectKey?: (typeof SUBJECT_KEYS)[number];
-  name: string;
-  date: string;
-  gradedCount: number;
 }
 
 export { GRADE_STATUSES };
