@@ -15,9 +15,12 @@ apps/
     src/config/        validación zod del .env (env.ts)
     src/database/      ModelsModule: registra todos los modelos una vez (global)
     src/<dominio>/     schools, school-years (+ periods, grading scheme), groups, students,
-                       activities (+ grades), notes, audit, reports (PDF), permission-grants,
-                       users (admin), imports (Excel)
-    src/reports/templates/  plantillas HTML de los PDF (Puppeteer)
+                       activities (+ grades), notes, audit, reports (PDF/Word), permission-grants,
+                       users (admin, /me), imports (Excel), summary, closing (cierre y resultados)
+    src/periods/       PeriodStatusService: estado del periodo POR GRUPO (periodGroupStatuses)
+    src/files/         FilesService: logos en GridFS (escuela y maestro titular)
+    src/reports/templates/  plantillas HTML de los PDF (Puppeteer; boleta con Handlebars)
+    test/__snapshots__/     PNG de la primera boleta para revisión manual (lo genera la e2e)
     src/scripts/       seed.ts
     scripts/           anonymize-workbook.mjs (genera el fixture anonimizado del Excel)
     test/              e2e con Jest + Supertest + mongodb-memory-server (replica set)
@@ -98,7 +101,17 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   lo que cambie promedios (calificaciones, actividades, importación) debe llamar
   `summaryCache.invalidateGroup(groupId)`.
 - **PDF**: `PdfService` (puppeteer-core, una instancia, cola `PDF_CONCURRENCY`); plantillas en
-  `src/reports/templates/*.html` con `{{clave}}` escapado por `renderTemplate`.
+  `src/reports/templates/*.html` con `{{clave}}` escapado por `renderTemplate`. La boleta
+  (`report-card.html`) usa Handlebars; el Word sale de los mismos datos con `docx`
+  (`report-card.docx.ts`). Antes de cerrar, la boleta lleva marca de agua "BORRADOR".
+- **Estado del periodo por grupo**: OPEN → IN_REVIEW → CLOSED → PUBLISHED (reabrir: solo admin,
+  con motivo). Nunca leas `period.status` para decidir si algo se puede editar: usa
+  `PeriodStatusService` (`assertOpen` para actividades, calificaciones e importación;
+  `assertResultsEditable` para ajustes, observaciones y notas; `effective` para mostrarlo).
+- **Cierre**: `PeriodResultsService` usa el mismo `PeriodDataService` que el resumen. Cerrar es
+  una transacción: si hay pendientes o campos parciales responde 422 `PERIOD_INCOMPLETE` con
+  `{studentId, fieldKey, activityIds}`; si no, guarda la foto completa en `periodResults`
+  (`snapshotAt`). Con el periodo cerrado, resultados y boletas salen de la foto, no del cálculo.
 - **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,
   `component` y `subjectKey` de su actividad para filtrar por grupo y materia sin joins.
 - **Errores**: lanza `AppException` / `Errors.*` (`src/common/app.exception.ts`). La API responde

@@ -19,6 +19,7 @@ import type { Actor } from '../common/request-user';
 import { assertCan, oid, scopedQuery, studentFullName } from '../common/scope';
 import { Group } from '../groups/group.schema';
 import { GroupsService } from '../groups/groups.service';
+import { PeriodStatusService } from '../periods/period-status.service';
 import { Period } from '../periods/period.schema';
 import { Enrollment } from '../students/enrollment.schema';
 import { Student } from '../students/student.schema';
@@ -61,15 +62,16 @@ export class GradesService {
     private readonly groups: GroupsService,
     private readonly audit: AuditService,
     private readonly summaryCache: SummaryCache,
+    private readonly periodStatus: PeriodStatusService,
   ) {}
 
   /** The group's active list by N/L with each student's grade (or null) in this activity. */
   async forActivity(activityId: string, actor: Actor): Promise<ActivityGradesView> {
     const activity = await this.activities.load(activityId, actor);
-    const [view, group, period, enrollments, grades] = await Promise.all([
+    const [view, group, periodStatus, enrollments, grades] = await Promise.all([
       this.activities.get(activityId, actor),
       this.groupModel.findById(activity.groupId, { name: 1 }).lean().exec(),
-      this.periodModel.findById(activity.periodId, { status: 1 }).lean().exec(),
+      this.periodStatus.effective(activity.periodId, activity.groupId),
       this.enrollmentModel
         .find({ groupId: activity.groupId, status: 'ACTIVE' })
         .sort({ listNumber: 1 })
@@ -103,7 +105,7 @@ export class GradesService {
     return {
       activity: view,
       groupName: group?.name ?? '',
-      periodStatus: period?.status ?? '',
+      periodStatus,
       rows,
     };
   }
@@ -120,7 +122,7 @@ export class GradesService {
       groupId: activity.groupId,
       subjectKey: activity.subjectKey ?? null,
     });
-    await this.activities.assertPeriodOpen(activity.periodId);
+    await this.activities.assertGroupOpen(activity.periodId, activity.groupId);
 
     // Every student must be active in the activity's group.
     const studentIds = entries.map((e) => oid(e.studentId));

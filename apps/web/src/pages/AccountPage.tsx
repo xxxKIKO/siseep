@@ -1,11 +1,13 @@
-import { ROLE_LABELS } from '@siseep/shared';
-import { useMutation } from '@tanstack/react-query';
-import { LoaderCircle, LogOut, MonitorSmartphone } from 'lucide-react';
+import { LOGO_MAX_BYTES, ROLE_LABELS, type User } from '@siseep/shared';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ImageUp, LoaderCircle, LogOut, MonitorSmartphone, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { myLogoKey, useMyLogo } from '@/api/closing';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { errorMessage } from '@/lib/api-client';
+import { api, errorMessage } from '@/lib/api-client';
 import { formatDateTime } from '@/lib/dates';
 
 export function AccountPage() {
@@ -44,6 +46,8 @@ export function AccountPage() {
         </CardContent>
       </Card>
 
+      {user.roles.includes('TEACHER') ? <TeacherLogoCard initial={Boolean(user.hasLogo)} /> : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Sesiones</CardTitle>
@@ -71,5 +75,98 @@ export function AccountPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** Logo of the homeroom teacher, printed at the right of the report card header. */
+function TeacherLogoCard({ initial }: { initial: boolean }) {
+  const queryClient = useQueryClient();
+  const [hasLogo, setHasLogo] = useState(initial);
+  const logo = useMyLogo(hasLogo);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const upload = useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api.upload<User>('/me/logo', form, 'PUT');
+    },
+    onSuccess: async () => {
+      setHasLogo(true);
+      await queryClient.invalidateQueries({ queryKey: myLogoKey });
+      toast.success('Logo actualizado.');
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  const remove = useMutation({
+    mutationFn: () => api.delete<User>('/me/logo'),
+    onSuccess: () => {
+      setHasLogo(false);
+      queryClient.removeQueries({ queryKey: myLogoKey });
+      toast.success('Logo eliminado.');
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  const onFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      toast.error('El logo debe ser una imagen PNG o JPG.');
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      toast.error('El logo debe pesar máximo 1 MB.');
+      return;
+    }
+    upload.mutate(file);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Logo para las boletas</CardTitle>
+        <CardDescription>
+          Aparece a la derecha del encabezado de las boletas de tu grupo. PNG o JPG, máximo 1 MB.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <div className="flex size-28 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/40">
+          {hasLogo && logo.data ? (
+            <img src={logo.data} alt="Tu logo" className="max-h-full max-w-full object-contain" />
+          ) : (
+            <span className="px-3 text-center text-sm text-muted-foreground">Sin logo</span>
+          )}
+        </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/png,image/jpeg"
+          className="sr-only"
+          aria-label="Elegir logo"
+          onChange={(event) => {
+            onFile(event.target.files?.[0]);
+            event.target.value = '';
+          }}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => fileInput.current?.click()}
+            disabled={upload.isPending}
+          >
+            {upload.isPending ? (
+              <LoaderCircle className="animate-spin" aria-hidden />
+            ) : (
+              <ImageUp aria-hidden />
+            )}
+            {hasLogo ? 'Cambiar logo' : 'Subir logo'}
+          </Button>
+          {hasLogo ? (
+            <Button variant="ghost" onClick={() => remove.mutate()} disabled={remove.isPending}>
+              <Trash2 aria-hidden /> Quitar
+            </Button>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

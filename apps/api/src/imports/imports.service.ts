@@ -21,6 +21,7 @@ import type { Actor } from '../common/request-user';
 import { assertCan, oid } from '../common/scope';
 import { Group, type GroupDocument } from '../groups/group.schema';
 import { PeriodResult } from '../period-results/period-result.schema';
+import { PeriodStatusService } from '../periods/period-status.service';
 import { Period, type PeriodDocument } from '../periods/period.schema';
 import { SchoolYear } from '../school-years/school-year.schema';
 import { Enrollment } from '../students/enrollment.schema';
@@ -57,6 +58,7 @@ export class ImportsService {
     @InjectModel(PeriodResult.name) private readonly resultModel: Model<PeriodResult>,
     @InjectConnection() private readonly connection: Connection,
     private readonly summaryCache: SummaryCache,
+    private readonly periodStatus: PeriodStatusService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -514,7 +516,7 @@ export class ImportsService {
     if (!period.schoolYearId.equals(group.schoolYearId)) {
       throw Errors.badRequest('El periodo no pertenece al ciclo escolar del grupo.');
     }
-    if (period.status !== 'OPEN') throw Errors.periodNotOpen();
+    await this.periodStatus.assertOpen(period._id, group._id);
     return { group, period };
   }
 

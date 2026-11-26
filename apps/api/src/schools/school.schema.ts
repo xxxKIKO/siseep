@@ -21,6 +21,10 @@ export class School {
   @Prop({ type: 'ObjectId' })
   logoFileId?: Types.ObjectId;
 
+  /** The homeroom teacher may close their group's period (otherwise only the admin). */
+  @Prop({ default: false })
+  teacherCanClosePeriod!: boolean;
+
   @Prop({ type: 'ObjectId', ref: 'User' })
   createdBy?: Types.ObjectId;
 

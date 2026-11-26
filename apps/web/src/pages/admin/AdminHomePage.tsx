@@ -1,5 +1,6 @@
 import {
   CalendarRange,
+  ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
   KeyRound,
@@ -36,6 +37,12 @@ const SECTIONS: { to: string; title: string; description: string; icon: LucideIc
     title: 'Ciclos y periodos',
     description: 'Ciclos escolares, periodos y reglas de cálculo',
     icon: CalendarRange,
+  },
+  {
+    to: '/admin/periodos',
+    title: 'Cierre de periodos',
+    description: 'Estado de cada grupo: cerrar, publicar y reabrir',
+    icon: ClipboardCheck,
   },
   {
     to: '/admin/usuarios',

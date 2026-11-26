@@ -10,6 +10,7 @@ import {
 import {
   BarChart3,
   ChevronRight,
+  ClipboardCheck,
   FileDown,
   LoaderCircle,
   MoreVertical,
@@ -43,6 +44,7 @@ import {
   COMPLEMENTARY_BY_FIELD,
   COMPONENT_LABELS,
   FIELD_SHORT_LABELS,
+  PERIOD_STATUS_LABELS,
   SUBJECT_LABELS,
   todayDateOnly,
 } from '@/lib/labels';
@@ -94,15 +96,22 @@ export function TeacherGroupPage() {
     <div>
       <PageHeader
         title={`Grupo ${g.name}`}
-        description={`${period ? `${period.name}${period.status === 'OPEN' ? '' : ' (cerrado)'}` : 'Sin periodo'} · ${g.studentCount} alumnos${subject ? ` · ${SUBJECT_LABELS[subject]}` : ''}`}
+        description={`${period ? `${period.name}${period.status === 'OPEN' ? '' : ` (${PERIOD_STATUS_LABELS[period.status].toLowerCase()})`}` : 'Sin periodo'} · ${g.studentCount} alumnos${subject ? ` · ${SUBJECT_LABELS[subject]}` : ''}`}
         back={{ to: '/maestro', label: 'Mis grupos' }}
         actions={
           homeroom && period ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link to={`/maestro/grupos/${g.id}/resumen`}>
-                <BarChart3 aria-hidden /> Resumen
-              </Link>
-            </Button>
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/maestro/grupos/${g.id}/resumen`}>
+                  <BarChart3 aria-hidden /> Resumen
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/maestro/grupos/${g.id}/cierre`}>
+                  <ClipboardCheck aria-hidden /> Cierre y boletas
+                </Link>
+              </Button>
+            </>
           ) : null
         }
       />
