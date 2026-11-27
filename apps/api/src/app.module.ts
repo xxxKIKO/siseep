@@ -9,6 +9,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { ClosingModule } from './closing/closing.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { REDACTED_LOG_PATHS } from './common/scrub';
 import { AppConfigService } from './config/app-config.service';
 import { AppConfigModule } from './config/config.module';
 import { ModelsModule } from './database/models.module';
@@ -42,7 +43,7 @@ import { UsersModule } from './users/users.module';
           level: config.get('LOG_LEVEL'),
           // Logs carry ids only: never tokens, cookies, bodies or personal data.
           redact: {
-            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+            paths: REDACTED_LOG_PATHS,
             censor: '[oculto]',
           },
           serializers: {

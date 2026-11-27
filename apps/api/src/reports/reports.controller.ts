@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { CheckPolicies, CurrentActor } from '../common/decorators';
 import { ObjectIdPipe } from '../common/object-id.pipe';
 import type { Actor } from '../common/request-user';
+import { PeriodExcelService } from './period-excel.service';
 import { type ReportFile, ReportCardsService } from './report-cards.service';
 import { ReportsService } from './reports.service';
 
@@ -21,6 +22,7 @@ class PreviewQueryDto extends createZodDto(
 ) {}
 
 const PDF = 'application/pdf';
+const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 /** Sends a generated file with an ASCII fallback name and the real UTF-8 name ("5°B"). */
@@ -50,6 +52,7 @@ export class ReportsController {
   constructor(
     private readonly reports: ReportsService,
     private readonly reportCards: ReportCardsService,
+    private readonly excel: PeriodExcelService,
   ) {}
 
   @Get('groups/:id/report-cards.pdf')
@@ -81,6 +84,19 @@ export class ReportsController {
       DOCX,
       'boletas.docx',
     );
+  }
+
+  @Get('groups/:id/period-results.xlsx')
+  @CheckPolicies((ability) => ability.can('read', 'PeriodResult'))
+  @ApiProduces(XLSX)
+  @ApiOperation({ summary: 'Concentrado del periodo en Excel (hoja Resumen + una por campo)' })
+  async periodExcel(
+    @Param('id', ObjectIdPipe) id: string,
+    @Query() query: ReportCardsQueryDto,
+    @CurrentActor() actor: Actor,
+    @Res() res: Response,
+  ): Promise<void> {
+    sendFile(res, await this.excel.build(id, query.periodId, actor), XLSX, 'concentrado.xlsx');
   }
 
   @Get('groups/:id/report-cards.html')

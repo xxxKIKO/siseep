@@ -23,11 +23,13 @@ import { toast } from 'sonner';
 import {
   downloadChildReportCard,
   useChildActivities,
+  useChildHistory,
   useChildNotes,
   useChildOverview,
   useChildren,
   useChildReportCards,
 } from '@/api/guardian';
+import { HistoryChart } from '@/components/history/HistoryChart';
 import { PageHeader } from '@/components/PageHeader';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -242,12 +244,21 @@ function ProgressTab({ studentId, periodId }: { studentId: string; periodId?: st
         ))}
       </ul>
       <WeeklyChart weekly={data.weekly} />
+      <ChildHistory studentId={studentId} />
       <p className="text-xs text-muted-foreground">
         Promedios en curso con las actividades calificadas hasta hoy. La calificación oficial es la
         de la boleta.
       </p>
     </div>
   );
+}
+
+function ChildHistory({ studentId }: { studentId: string }) {
+  const history = useChildHistory(studentId);
+  if (!history.data || history.data.periods.filter((p) => p.source !== 'none').length < 1) {
+    return null;
+  }
+  return <HistoryChart history={history.data} title="Cómo va en cada periodo" />;
 }
 
 function WeeklyChart({ weekly }: { weekly: ChildOverview['weekly'] }) {

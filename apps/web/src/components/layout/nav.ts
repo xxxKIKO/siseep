@@ -1,4 +1,4 @@
-import { type Role, ROLE_HOME_PATHS } from '@siseep/shared';
+import { type Role, ROLE_HOME_PATHS } from '@siseep/shared/core';
 import {
   CalendarRange,
   ClipboardCheck,

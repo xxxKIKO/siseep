@@ -22,7 +22,7 @@ apps/
     src/guardians/     códigos para padres, guardianLinks y portal /me/children (404 si no es tu hijo)
     src/reports/templates/  plantillas HTML de los PDF (Puppeteer; boleta con Handlebars)
     test/__snapshots__/     PNG de la primera boleta para revisión manual (lo genera la e2e)
-    src/scripts/       seed.ts
+    src/scripts/       seed.ts y migrate.ts (`pnpm migrate:prod`: índices + ciclo 2026-2027)
     scripts/           anonymize-workbook.mjs (genera el fixture anonimizado del Excel)
     test/              e2e con Jest + Supertest + mongodb-memory-server (replica set)
     test/fixtures/     Excel del 5°B anonimizado (nombres y observaciones ficticios)
@@ -35,6 +35,7 @@ apps/
     src/pages/teacher/capture/  pantalla Capturar (useCapture: guardado, cola offline, conflictos)
     src/pages/guardian/  portal de padres; src/pages/public/: /registro y /privacidad
     src/auth/ability.ts  useCan (reglas CASL de GET /auth/abilities) y usePortalBase
+    src/portals/       un chunk por portal (carga diferida desde routes.tsx)
     e2e/               Playwright (iPhone 12): Mongo en memoria + API compilada + vite preview
 packages/
   shared/              esquemas zod, tipos, enums (sección 4), colores, reglas CASL (defineAbilityFor)
@@ -43,7 +44,9 @@ packages/
   eslint-config/       ESLint compartido (base y react)
   tsconfig/            tsconfig base, nest, react y library
 scripts/dev.mjs        orquesta `pnpm dev` (Mongo + seed + api + web)
-docs/                  plan.md (especificación) y deploy.md (staging)
+scripts/build-icons.mjs  íconos de la PWA desde el logo (`pnpm icons:build <logo>`)
+scripts/build-manuals.mjs  PDF de los manuales (`pnpm manuals:pdf`, una página cada uno)
+docs/                  plan.md (especificación), deploy.md, go-live.md y manual-*.md (+ pdf/)
 ```
 
 ## Comandos
@@ -59,6 +62,8 @@ docs/                  plan.md (especificación) y deploy.md (staging)
 | `pnpm --filter @siseep/api test`                            | Solo pruebas de la API                                                                                   |
 | `pnpm golden:build`                                         | Regenera las pruebas doradas del motor desde el fixture del Excel (`scripts/build-golden-fixture.ts`)    |
 | `pnpm test:e2e`                                             | Playwright en viewport de iPhone 12 (compila shared y api; usa tu Chrome local, en CI Chromium)          |
+| `LIGHTHOUSE=1 pnpm test:e2e`                                | Además mide Lighthouse móvil en captura y portal de padres (reportes en `apps/web/test-results`)         |
+| `pnpm migrate:prod`                                         | Índices + escuela + ciclo 2026-2027 con sus reglas (idempotente; Railway la corre en cada despliegue)    |
 
 - **Mongo local**: se usa el MongoDB que ya corre en `127.0.0.1:27017` (replica set `rs0`,
   necesario para las transacciones), compartido con otros proyectos; SISEEP solo usa la base
@@ -81,7 +86,9 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   controllers: solo reciben, llaman al service y responden.
 - **Autorización**: todas las rutas pasan por `JwtAuthGuard` (global); las públicas llevan
   `@Public()`. Cada ruta protegida declara `@CheckPolicies((ability) => ...)` con las reglas CASL
-  de `packages/shared/src/abilities.ts`. El frontend solo oculta botones; el backend decide.
+  de `packages/shared/src/abilities.ts`, o `@Authenticated()` si es de la propia cuenta (perfil,
+  sesión, logo). `test/route-policies.e2e-spec.ts` falla si una ruta no declara ninguna de las
+  tres. El frontend solo oculta botones; el backend decide.
 - **Alcance de datos**: toda consulta se filtra por `schoolId` y por el alcance del usuario
   (grupos asignados, alumnos vinculados). Nunca confíes en ids del frontend sin revisar el alcance.
   En los services: recibe `Actor` (`@CurrentActor()`), lista con `scopedQuery(actor, 'Group')`
@@ -135,7 +142,16 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   `America/Mexico_City`). Las fechas de calendario (sin hora) viajan como `AAAA-MM-DD` y se
   guardan a las 12:00 UTC (`dateOnlyToDate` / `dateToDateOnly` de shared) para que nunca se
   recorran un día.
-- **Logs** sin datos personales: solo ids.
+- **Logs** sin datos personales: solo ids. Pino redacta las rutas de `REDACTED_LOG_PATHS` y los
+  errores pasan por `scrubText` (correos, valores de llaves duplicadas, textos entre comillas).
+  Sentry (API y web) solo con `SENTRY_DSN`/`VITE_SENTRY_DSN`; en Sentry 11 `sendDefaultPii` es
+  `dataCollection`, y ahí todo va apagado.
+- **Producción**: la API no arranca en `production` con `COOKIE_SECURE=false`, orígenes sin
+  `https://`, Swagger encendido o correo de consola (`productionProblems` en `env.ts`). El límite
+  de intentos de login vive en MongoDB (`MongoThrottlerStorage`) para que las 2 instancias lo
+  compartan. La CSP de la web está en `apps/web/vercel.json`.
+- **Arranque de la web**: el código que corre al inicio (auth, layout, rutas) importa de
+  `@siseep/shared/core` (sin zod). Las pantallas van en los chunks de `src/portals/`.
 - **Colores**: primario `#1F3A7A`; campos formativos en `FIELD_COLORS` (`packages/shared`).
 - **Mobile-first**: diseña a 360 px; barra inferior en celular, barra lateral desde 1024 px (`lg`).
   Objetivos táctiles de al menos 44 px.

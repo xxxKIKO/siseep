@@ -54,6 +54,10 @@ export const envSchema = z.object({
   MAIL_DRIVER: z.enum(['console', 'resend']).default('console'),
   MAIL_FROM: z.string().default('Evaluación Allende <no-responder@example.com>'),
   RESEND_API_KEY: z.string().optional(),
+
+  /** Error monitoring (optional). Never sends personal data (sendDefaultPii: false). */
+  SENTRY_DSN: z.string().url().optional().or(z.literal('')),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -75,5 +79,29 @@ export function validateEnv(config: Record<string, unknown>): Env {
       'Variables de entorno inválidas:\n  - RESEND_API_KEY es obligatoria con MAIL_DRIVER=resend',
     );
   }
+  const problems = productionProblems(result.data);
+  if (problems.length) {
+    throw new Error(`Variables de entorno inválidas para producción:\n${problems.join('\n')}`);
+  }
   return result.data;
+}
+
+/** Staging/production refuse to boot with development-only settings. */
+export function productionProblems(env: Env): string[] {
+  if (env.NODE_ENV !== 'production' && env.NODE_ENV !== 'staging') return [];
+  const problems: string[] = [];
+  if (!env.COOKIE_SECURE) problems.push('  - COOKIE_SECURE debe ser true (cookies solo por HTTPS)');
+  const origins = env.WEB_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (origins.some((o) => !o.startsWith('https://') || /localhost|127\.0\.0\.1/.test(o))) {
+    problems.push('  - WEB_ORIGIN debe ser solo el dominio de la web con https:// (sin localhost)');
+  }
+  if (!env.WEB_URL.startsWith('https://')) problems.push('  - WEB_URL debe usar https://');
+  if (env.NODE_ENV === 'production') {
+    if (env.SWAGGER_ENABLED) problems.push('  - SWAGGER_ENABLED debe ser false en producción');
+    if (env.MAIL_DRIVER !== 'resend')
+      problems.push('  - MAIL_DRIVER debe ser resend en producción');
+  }
+  return problems;
 }

@@ -1,4 +1,4 @@
-import { type Role, ROLE_HOME_PATHS, ROLE_LABELS } from '@siseep/shared';
+import { type Role, ROLE_HOME_PATHS, ROLE_LABELS } from '@siseep/shared/core';
 import { ChevronsUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { setPreferredRole } from '@/auth/roles';

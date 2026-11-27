@@ -1,6 +1,8 @@
-import { FIELD_COLORS, FIELD_KEYS, ROLE_LABELS } from '@siseep/shared';
+import { FIELD_COLORS, FIELD_KEYS, ROLE_LABELS } from '@siseep/shared/core';
 import { LogOut } from 'lucide-react';
+import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
+import { FullPageSpinner } from '@/components/FullPageSpinner';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/auth-context';
 import { defaultRoleFor, roleFromPath } from '@/auth/roles';
@@ -108,7 +110,9 @@ export function AppLayout() {
         id="contenido"
         className="mx-auto w-full max-w-5xl px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8"
       >
-        <Outlet />
+        <Suspense fallback={<FullPageSpinner />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* Bottom navigation (phones and tablets) */}

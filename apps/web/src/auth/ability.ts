@@ -4,7 +4,7 @@ import {
   abilityFromRules,
   subject,
   type SubjectName,
-} from '@siseep/shared';
+} from '@siseep/shared/core';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router';

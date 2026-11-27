@@ -5,6 +5,12 @@ dockerfilePath = "apps/api/Dockerfile"
 watchPatterns = ["apps/api/**", "packages/**", "pnpm-lock.yaml"]
 
 [deploy]
+# Production: 2 instances behind Railway's load balancer. Login attempt counters live in MongoDB,
+# so both instances share them; sessions are JWT + MongoDB, so any instance serves any request.
+numReplicas = 2
+# Indexes + 2026-2027 grading scheme before every release (idempotent, never drops data).
+preDeployCommand = ["node dist/scripts/migrate.js"]
+# Healthy = MongoDB answers and Chromium is ready for the report cards.
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"

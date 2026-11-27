@@ -9,11 +9,21 @@ import {
   type PeriodResultsView,
   type UpdatePeriodResultInput,
 } from '@siseep/shared';
-import { CheckCircle2, Eye, FileDown, FileText, LoaderCircle, Lock, Send } from 'lucide-react';
+import {
+  CheckCircle2,
+  Eye,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  LoaderCircle,
+  Lock,
+  Send,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import {
+  downloadPeriodExcel,
   downloadReportCards,
   fetchReportCardPreview,
   usePeriodResults,
@@ -59,7 +69,7 @@ export function ClosingPage({
   const results = usePeriodResults(groupId, periodId);
   const transition = usePeriodTransition();
   const [preview, setPreview] = useState<{ title: string; html: string | null } | null>(null);
-  const [downloading, setDownloading] = useState<'pdf' | 'docx' | null>(null);
+  const [downloading, setDownloading] = useState<'pdf' | 'docx' | 'xlsx' | null>(null);
   const [issuesOpen, setIssuesOpen] = useState(false);
 
   if (group.isLoading || results.isLoading) {
@@ -101,10 +111,18 @@ export function ClosingPage({
       toast.error(errorMessage(error));
     }
   };
-  const download = async (format: 'pdf' | 'docx') => {
+  const download = async (format: 'pdf' | 'docx' | 'xlsx') => {
     setDownloading(format);
     try {
-      await downloadReportCards(groupId, periodId, format, `${fileBase}.${format}`);
+      if (format === 'xlsx') {
+        await downloadPeriodExcel(
+          groupId,
+          periodId,
+          `Concentrado ${view.group.name} - ${view.period.name}.xlsx`,
+        );
+      } else {
+        await downloadReportCards(groupId, periodId, format, `${fileBase}.${format}`);
+      }
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -237,6 +255,18 @@ export function ClosingPage({
                 </Button>
               </>
             ) : null}
+            <Button
+              variant="outline"
+              onClick={() => void download('xlsx')}
+              disabled={downloading !== null}
+            >
+              {downloading === 'xlsx' ? (
+                <LoaderCircle className="animate-spin" aria-hidden />
+              ) : (
+                <FileSpreadsheet aria-hidden />
+              )}
+              Concentrado en Excel
+            </Button>
             {view.can.review ? (
               <Button onClick={() => run('review')} disabled={transition.isPending}>
                 <Send aria-hidden /> Enviar a revisión

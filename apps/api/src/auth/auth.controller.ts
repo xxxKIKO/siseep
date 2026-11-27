@@ -12,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthResponse, GuardianCodePreview, User } from '@siseep/shared';
 import type { CookieOptions, Request, Response } from 'express';
-import { CurrentActor, CurrentUser, Public } from '../common/decorators';
+import { Authenticated, CurrentActor, CurrentUser, Public } from '../common/decorators';
 import type { Actor, RequestUser } from '../common/request-user';
 import { AppConfigService } from '../config/app-config.service';
 import {
@@ -81,6 +81,7 @@ export class AuthController {
     this.clearRefreshCookie(res);
   }
 
+  @Authenticated()
   @Post('logout-all')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
@@ -93,6 +94,7 @@ export class AuthController {
     this.clearRefreshCookie(res);
   }
 
+  @Authenticated()
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Datos del usuario con sesión iniciada' })
@@ -114,6 +116,7 @@ export class AuthController {
     return result.body;
   }
 
+  @Authenticated()
   @Get('abilities')
   @ApiBearerAuth()
   @ApiOperation({

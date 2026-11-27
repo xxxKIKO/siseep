@@ -12,6 +12,12 @@ export const CHECK_POLICIES_KEY = 'checkPolicies';
 export const CheckPolicies = (...handlers: PolicyHandler[]) =>
   SetMetadata(CHECK_POLICIES_KEY, handlers);
 
+/**
+ * Any signed-in user (their own account: profile, session, logo, abilities). Explicit on purpose:
+ * a test fails if a route has neither @Public, @CheckPolicies nor @Authenticated.
+ */
+export const Authenticated = () => CheckPolicies(() => true);
+
 /** Injects the authenticated user (set by JwtAuthGuard). */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): RequestUser => {
