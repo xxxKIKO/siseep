@@ -25,6 +25,16 @@ export class School {
   @Prop({ default: false })
   teacherCanClosePeriod!: boolean;
 
+  /** Privacy notice (section 7). null = the template, pending review by the direction. */
+  @Prop({ type: String, default: null })
+  privacyNoticeText?: string | null;
+
+  @Prop({ type: Number, default: 1 })
+  privacyNoticeVersion!: number;
+
+  @Prop({ type: Date, default: null })
+  privacyNoticeUpdatedAt?: Date | null;
+
   @Prop({ type: 'ObjectId', ref: 'User' })
   createdBy?: Types.ObjectId;
 

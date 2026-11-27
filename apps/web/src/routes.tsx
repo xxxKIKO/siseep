@@ -19,8 +19,14 @@ import { SchoolYearsPage } from '@/pages/admin/SchoolYearsPage';
 import { StudentsPage } from '@/pages/admin/StudentsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { ClosingPage } from '@/pages/closing/ClosingPage';
-import { ComingSoonPage } from '@/pages/ComingSoonPage';
+import { AuditPage } from '@/pages/director/AuditPage';
 import { DirectorDashboardPage } from '@/pages/director/DirectorDashboardPage';
+import { AddChildPage } from '@/pages/guardian/AddChildPage';
+import { ChildPage } from '@/pages/guardian/ChildPage';
+import { GuardianHomePage } from '@/pages/guardian/GuardianHomePage';
+import { GuardianSignUpPage } from '@/pages/public/GuardianSignUpPage';
+import { PrivacyPage } from '@/pages/public/PrivacyPage';
+import { GuardiansPage } from '@/pages/teacher/GuardiansPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { CapturePage } from '@/pages/teacher/capture/CapturePage';
 import { StudentFilePage } from '@/pages/teacher/StudentFilePage';
@@ -47,9 +53,22 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
       element: <ClosingPage backTo={() => ({ to: '/admin/periodos', label: 'Periodos' })} />,
     },
   ],
+  // The director reuses the teacher screens: editing depends on the CASL ability (grants).
   DIRECTOR: [
     { index: true, element: <DirectorDashboardPage /> },
-    { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage readOnly /> },
+    { path: 'grupos/:groupId', element: <TeacherGroupPage /> },
+    { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage /> },
+    { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
+    {
+      path: 'grupos/:groupId/cierre',
+      element: (
+        <ClosingPage
+          backTo={(id, name) => ({ to: `/director/grupos/${id}`, label: `Grupo ${name}` })}
+        />
+      ),
+    },
+    { path: 'actividades/:activityId', element: <CapturePage /> },
+    { path: 'bitacora', element: <AuditPage /> },
   ],
   TEACHER: [
     { index: true, element: <TeacherHomePage /> },
@@ -65,8 +84,13 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
     },
     { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
     { path: 'actividades/:activityId', element: <CapturePage /> },
+    { path: 'grupos/:groupId/padres', element: <GuardiansPage /> },
   ],
-  GUARDIAN: [{ index: true, element: <ComingSoonPage role="GUARDIAN" /> }],
+  GUARDIAN: [
+    { index: true, element: <GuardianHomePage /> },
+    { path: 'hijos/:studentId', element: <ChildPage /> },
+    { path: 'agregar', element: <AddChildPage /> },
+  ],
 };
 
 /** Portal per role: /admin, /director, /maestro, /padres. */
@@ -87,6 +111,8 @@ export const routes: RouteObject[] = [
   },
   { path: '/restablecer', element: <ResetPasswordPage /> },
   { path: '/invitacion', element: <AcceptInvitePage /> },
+  { path: '/registro', element: <GuardianSignUpPage /> },
+  { path: '/privacidad', element: <PrivacyPage /> },
   {
     element: (
       <RequireAuth>

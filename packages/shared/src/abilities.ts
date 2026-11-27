@@ -125,7 +125,9 @@ const CRUD: Action[] = ['create', 'read', 'update', 'delete'];
  * - TEACHER: reads and writes in the groups they teach. A SUBJECT assignment is limited to its
  *   `subjectKey` (the English teacher never sees Saberes). Homeroom teachers read every note of
  *   their group but only edit their own; each teacher reads the audit log of their groups.
- * - GUARDIAN: nothing in the school catalogs (their portal arrives in stage 5).
+ *   The homeroom teacher also generates guardian codes for the students of their group.
+ * - GUARDIAN: nothing in the school catalogs; only their own guardian links (the portal checks
+ *   each child against an active link and answers 404 otherwise).
  *
  * The second argument also accepts a plain array of grants (stage 0 signature).
  */
@@ -171,11 +173,16 @@ export function defineAbilityFor(
         can(['create', 'read'], 'StudentNote', { groupId, schoolId });
         can(['update', 'delete'], 'StudentNote', { groupId, schoolId, authorId: user.id });
         can('read', 'AuditLog', { groupId, schoolId });
+        can(['create', 'read'], 'Invitation', { groupId, schoolId, type: 'GUARDIAN' });
       } else if (assignment.subjectKey) {
         can(CRUD, SUBJECT_WORK, { groupId, schoolId, subjectKey: assignment.subjectKey });
         can('read', 'AuditLog', { groupId, schoolId, subjectKey: assignment.subjectKey });
       }
     }
+  }
+
+  if (user.roles.includes(Role.GUARDIAN)) {
+    can('read', 'GuardianLink', { guardianUserId: user.id, status: 'ACTIVE' });
   }
 
   for (const grant of grants) {
@@ -212,4 +219,9 @@ export function scopeFilter(
     rule.inverted ? { $nor: [rule.conditions] } : (rule.conditions as object),
   );
   return query as Record<string, unknown> | null;
+}
+
+/** The ability rebuilt from the rules the API sends (`GET /auth/abilities`), for the web. */
+export function abilityFromRules(rules: unknown[]): AppAbility {
+  return createMongoAbility<AppAbility>(rules as AppAbility['rules']);
 }

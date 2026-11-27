@@ -4,11 +4,14 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   GraduationCap,
+  Heart,
+  History,
   House,
   KeyRound,
   LayoutDashboard,
   type LucideIcon,
   School,
+  UserPlus,
   UserRound,
   Users,
   UsersRound,
@@ -50,10 +53,18 @@ export function navItemsFor(role: Role): NavItem[] {
     ];
   }
   if (role === 'DIRECTOR') {
-    return [{ ...home, label: 'Tablero', icon: LayoutDashboard, end: false }, account];
+    return [
+      { ...home, label: 'Tablero', icon: LayoutDashboard, end: false },
+      { to: '/director/bitacora', label: 'Bitácora', icon: History, mobile: true },
+      account,
+    ];
   }
   if (role === 'TEACHER') {
     return [{ ...home, label: 'Mis grupos', icon: UsersRound, end: false }, account];
   }
-  return [home, account];
+  return [
+    { ...home, label: 'Mis hijos', icon: Heart, end: false },
+    { to: '/padres/agregar', label: 'Agregar hijo', icon: UserPlus, mobile: true },
+    account,
+  ];
 }

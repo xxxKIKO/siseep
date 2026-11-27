@@ -10,14 +10,21 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { LOGO_MAX_BYTES, type SchoolView, updateSchoolSchema } from '@siseep/shared';
+import {
+  LOGO_MAX_BYTES,
+  type PrivacyNoticeView,
+  type SchoolView,
+  updatePrivacyNoticeSchema,
+  updateSchoolSchema,
+} from '@siseep/shared';
 import type { Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
-import { CheckPolicies, CurrentActor } from '../common/decorators';
+import { CheckPolicies, CurrentActor, Public } from '../common/decorators';
 import type { Actor } from '../common/request-user';
 import { SchoolsService } from './schools.service';
 
 class UpdateSchoolDto extends createZodDto(updateSchoolSchema) {}
+class UpdatePrivacyNoticeDto extends createZodDto(updatePrivacyNoticeSchema) {}
 
 @ApiTags('school')
 @ApiBearerAuth()
@@ -29,6 +36,23 @@ export class SchoolsController {
   @ApiOperation({ summary: 'Datos de la escuela del usuario' })
   get(@CurrentActor() actor: Actor): Promise<SchoolView> {
     return this.schools.get(actor);
+  }
+
+  @Public()
+  @Get('privacy-notice')
+  @ApiOperation({ summary: 'Aviso de privacidad (público)' })
+  privacyNotice(): Promise<PrivacyNoticeView> {
+    return this.schools.privacyNotice();
+  }
+
+  @Put('privacy-notice')
+  @CheckPolicies((ability) => ability.can('update', 'School'))
+  @ApiOperation({ summary: 'Edita el aviso de privacidad (admin; sube la versión)' })
+  updatePrivacyNotice(
+    @Body() dto: UpdatePrivacyNoticeDto,
+    @CurrentActor() actor: Actor,
+  ): Promise<PrivacyNoticeView> {
+    return this.schools.updatePrivacyNotice(dto.text, actor);
   }
 
   @Patch()

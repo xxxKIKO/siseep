@@ -3,6 +3,7 @@ import { CircleCheck, CloudOff, FileDown, LoaderCircle, TriangleAlert } from 'lu
 import { useEffect, useRef } from 'react';
 import { useBlocker, useParams } from 'react-router';
 import { downloadCaptureSheet, useActivityGrades } from '@/api/capture';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/dates';
@@ -80,7 +81,16 @@ function CaptureEditor({ view }: { view: ActivityGradesView }) {
     view.rows,
   );
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const readOnly = view.periodStatus !== 'OPEN';
+  const { can, ready } = useCan();
+  const base = usePortalBase();
+  // Editable only with an OPEN period and the CASL permission (a director needs a grant).
+  const readOnly =
+    view.periodStatus !== 'OPEN' ||
+    !ready ||
+    !can('update', 'Grade', {
+      groupId: activity.groupId,
+      ...(activity.subjectKey ? { subjectKey: activity.subjectKey } : {}),
+    });
 
   // Warn before leaving with unsent changes (in-app navigation and closing the tab).
   const blocker = useBlocker(pendingCount > 0);
@@ -121,7 +131,7 @@ function CaptureEditor({ view }: { view: ActivityGradesView }) {
       <PageHeader
         title={activity.name}
         back={{
-          to: `/maestro/grupos/${activity.groupId}?campo=${activity.fieldKey}`,
+          to: `${base}/grupos/${activity.groupId}?campo=${activity.fieldKey}`,
           label: `Grupo ${view.groupName}`,
         }}
         description={`${FIELD_NAMES[activity.fieldKey]} · ${COMPONENT_LABELS[activity.component]} · ${formatDate(`${activity.date}T12:00:00Z`, "d 'de' MMMM")}`}

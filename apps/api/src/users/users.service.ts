@@ -42,6 +42,11 @@ export class UsersService {
     return this.userModel.create({ ...input, status: UserStatus.ACTIVE });
   }
 
+  /** Only to undo an account that was just created (failed guardian sign-up). */
+  async hardDelete(userId: Types.ObjectId): Promise<void> {
+    await this.userModel.deleteOne({ _id: userId }).exec();
+  }
+
   async setPassword(userId: Types.ObjectId | string, passwordHash: string): Promise<void> {
     await this.userModel.updateOne({ _id: userId }, { $set: { passwordHash } }).exec();
   }

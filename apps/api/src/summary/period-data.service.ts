@@ -50,6 +50,24 @@ export class PeriodDataService {
     @InjectModel(PeriodResult.name) private readonly resultModel: Model<PeriodResult>,
   ) {}
 
+  /** Grading rules of a school year (or the defaults when none were saved). */
+  async scheme(schoolYearId: Types.ObjectId, session?: ClientSession): Promise<SchemeData> {
+    const schemeDoc = await this.schemeModel
+      .findOne({ schoolYearId }, null, { session })
+      .lean()
+      .exec();
+    return schemeDoc
+      ? {
+          fields: schemeDoc.fields,
+          rounding: schemeDoc.rounding,
+          lowThreshold: schemeDoc.lowThreshold,
+          lowLegend: schemeDoc.lowLegend,
+          minFinal: schemeDoc.minFinal,
+          maxFinal: schemeDoc.maxFinal,
+        }
+      : DEFAULT_GRADING_SCHEME;
+  }
+
   async load(
     group: { _id: Types.ObjectId; schoolYearId: Types.ObjectId },
     periodId: Types.ObjectId,

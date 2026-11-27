@@ -1,15 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LOGO_MAX_BYTES, updateSchoolSchema } from '@siseep/shared';
+import { LOGO_MAX_BYTES, PRIVACY_PENDING_REVIEW, updateSchoolSchema } from '@siseep/shared';
 import { ImageUp, LoaderCircle } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useSchool, useSchoolLogo, useUpdateSchool, useUploadLogo } from '@/api/catalog';
+import { usePrivacyNotice, useUpdatePrivacyNotice } from '@/api/guardian';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { fieldProps } from '@/lib/form';
 
 export function SchoolPage() {
@@ -154,6 +157,8 @@ export function SchoolPage() {
           </CardContent>
         </Card>
 
+        <PrivacyNoticeCard />
+
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Cierre de periodo</CardTitle>
@@ -181,5 +186,59 @@ export function SchoolPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/** Privacy notice shown in /privacidad and accepted by guardians (each save is a new version). */
+function PrivacyNoticeCard() {
+  const notice = usePrivacyNotice();
+  const save = useUpdatePrivacyNotice();
+  const [text, setText] = useState<string | null>(null);
+  const value = text ?? notice.data?.text ?? '';
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Aviso de privacidad</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {notice.data?.pendingReview ? (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Es la plantilla, marcada "{PRIVACY_PENDING_REVIEW}". Revísala con la dirección, ajústala
+            y guárdala.
+          </p>
+        ) : notice.data ? (
+          <p className="text-sm text-muted-foreground">
+            Versión {notice.data.version}. Al guardar cambios sube la versión y los padres la
+            aceptan de nuevo la próxima vez que vinculen a un hijo.
+          </p>
+        ) : null}
+        <Label htmlFor="privacy-text">Texto del aviso</Label>
+        <Textarea
+          id="privacy-text"
+          rows={14}
+          value={value}
+          onChange={(e) => setText(e.target.value)}
+          disabled={notice.isLoading}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() =>
+              save.mutate(value.replace(`${PRIVACY_PENDING_REVIEW}\n\n`, ''), {
+                onSuccess: () => setText(null),
+              })
+            }
+            disabled={save.isPending || value.trim().length < 50}
+          >
+            {save.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
+            Guardar aviso
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/privacidad" target="_blank" rel="noreferrer">
+              Ver página pública
+            </a>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

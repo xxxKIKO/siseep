@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { SchoolView, UpdateSchoolInput } from '@siseep/shared';
+import {
+  defaultPrivacyNotice,
+  type PrivacyNoticeView,
+  type SchoolView,
+  type UpdateSchoolInput,
+} from '@siseep/shared';
 import type { Model } from 'mongoose';
 import { Errors } from '../common/app.exception';
 import type { Actor } from '../common/request-user';
@@ -68,12 +73,44 @@ export class SchoolsService {
     return toView(school);
   }
 
+  /** Public privacy notice (single school per deployment): the template until it is edited. */
+  async privacyNotice(): Promise<PrivacyNoticeView> {
+    const school = await this.schoolModel
+      .findOne({ deletedAt: null })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
+    if (!school) throw Errors.notFound('Aviso no disponible.');
+    return noticeView(school);
+  }
+
+  /** Admin edits the notice: the version goes up, so guardians accept it again when linking. */
+  async updatePrivacyNotice(text: string, actor: Actor): Promise<PrivacyNoticeView> {
+    const school = await this.load(actor);
+    assertCan(actor.ability, 'update', 'School', school);
+    school.privacyNoticeText = text;
+    school.privacyNoticeVersion = (school.privacyNoticeVersion ?? 1) + 1;
+    school.privacyNoticeUpdatedAt = new Date();
+    await school.save();
+    return noticeView(school);
+  }
+
   async getLogo(actor: Actor): Promise<{ buffer: Buffer; contentType: string }> {
     const school = await this.load(actor);
     const logo = await this.files.read(school.logoFileId);
     if (!logo) throw Errors.notFound('La escuela aún no tiene logo.');
     return logo;
   }
+}
+
+function noticeView(school: School): PrivacyNoticeView {
+  return {
+    schoolName: school.name,
+    text: school.privacyNoticeText ?? defaultPrivacyNotice(school.name),
+    version: school.privacyNoticeVersion ?? 1,
+    updatedAt: school.privacyNoticeUpdatedAt?.toISOString() ?? null,
+    pendingReview: !school.privacyNoticeText,
+  };
 }
 
 function toView(school: SchoolDocument): SchoolView {
