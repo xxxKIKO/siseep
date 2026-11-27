@@ -14,6 +14,7 @@ import { AppConfigModule } from './config/config.module';
 import { ModelsModule } from './database/models.module';
 import { FilesModule } from './files/files.module';
 import { GroupsModule } from './groups/groups.module';
+import { GuardiansModule } from './guardians/guardians.module';
 import { HealthController } from './health/health.controller';
 import { ImportsModule } from './imports/imports.module';
 import { InvitationsModule } from './invitations/invitations.module';
@@ -87,6 +88,7 @@ import { UsersModule } from './users/users.module';
     ClosingModule,
     ReportsModule,
     ImportsModule,
+    GuardiansModule,
   ],
   controllers: [HealthController],
   providers: [

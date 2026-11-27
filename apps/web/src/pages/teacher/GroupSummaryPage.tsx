@@ -2,20 +2,24 @@ import { LoaderCircle } from 'lucide-react';
 import { useParams } from 'react-router';
 import { useGroup } from '@/api/catalog';
 import { useGroupSummary } from '@/api/summary';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { PageHeader } from '@/components/PageHeader';
 import { GroupSummaryView } from '@/components/summary/GroupSummaryView';
 import { ApiError } from '@/lib/api-client';
 
 /**
- * Live summary of a group. Teachers: /maestro/grupos/:id/resumen (links to capture and student
- * files). Director: /director/grupos/:id/resumen (read only).
+ * Live summary of a group (/maestro/… and /director/…). Links to capture only where the CASL
+ * ability allows editing grades (a director needs an active permission grant).
  */
-export function GroupSummaryPage({ readOnly = false }: { readOnly?: boolean }) {
+export function GroupSummaryPage() {
   const { groupId = '' } = useParams();
+  const portal = usePortalBase();
+  const { can } = useCan();
   const group = useGroup(groupId);
   const period = group.data?.currentPeriod;
   const summary = useGroupSummary(groupId, period?.id);
-  const base = readOnly ? '/director' : `/maestro/grupos/${groupId}`;
+  const readOnly = !can('update', 'Grade', { groupId });
+  const base = `${portal}/grupos/${groupId}`;
 
   if (group.isLoading || summary.isLoading) {
     return (
@@ -50,17 +54,14 @@ export function GroupSummaryPage({ readOnly = false }: { readOnly?: boolean }) {
             ? ` · Promedio del grupo ${summary.data.stats.generalAverage?.toFixed(1) ?? '—'}`
             : ''
         }${readOnly ? ' · Solo lectura' : ''}`}
-        back={
-          readOnly
-            ? { to: '/director', label: 'Tablero' }
-            : { to: base, label: `Grupo ${group.data.name}` }
-        }
+        back={{ to: base, label: `Grupo ${group.data.name}` }}
       />
       {summary.data ? (
         <GroupSummaryView
           summary={summary.data}
           readOnly={readOnly}
-          studentHref={readOnly ? undefined : (studentId) => `${base}/alumnos/${studentId}`}
+          studentHref={(studentId) => `${base}/alumnos/${studentId}`}
+          activityHref={(activityId) => `${portal}/actividades/${activityId}`}
         />
       ) : null}
     </div>

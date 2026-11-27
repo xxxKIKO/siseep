@@ -39,7 +39,7 @@ const HOME_MARKERS: Record<Role, string> = {
   ADMIN: 'Importar Excel',
   DIRECTOR: 'Tablero de la escuela',
   TEACHER: 'Aún no tienes grupos asignados. Pide a la administración que te asigne a tu grupo.',
-  GUARDIAN: 'Próximamente',
+  GUARDIAN: 'Aún no tienes hijos vinculados.',
 };
 const findHome = (role: Role) => screen.findByText(HOME_MARKERS[role]);
 

@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Plus,
   Trash2,
+  UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
@@ -27,6 +28,7 @@ import {
   useGroupNotes,
 } from '@/api/capture';
 import { useGroup, useRoster } from '@/api/catalog';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { useAuth } from '@/auth/auth-context';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
@@ -54,10 +56,16 @@ import { NotesList } from './NotesList';
 
 type Tab = FieldKey | 'alumnos' | 'notas';
 
-/** /maestro/grupos/:groupId — field tabs, list of activities, students and today's notes. */
+/**
+ * /maestro/grupos/:groupId (and /director/grupos/:groupId, read-only unless a permission grant
+ * allows editing) — field tabs, list of activities, students and today's notes. What can be
+ * edited comes from the CASL ability, never from fixed roles.
+ */
 export function TeacherGroupPage() {
   const { groupId = '' } = useParams();
   const { user } = useAuth();
+  const { can } = useCan();
+  const base = usePortalBase();
   const group = useGroup(groupId);
   const [params, setParams] = useSearchParams();
   const [creating, setCreating] = useState(false);
@@ -77,15 +85,22 @@ export function TeacherGroupPage() {
 
   const g = group.data;
   const mine = g.assignments.filter((a) => a.teacher.id === user?.id);
-  const homeroom = mine.some((a) => a.scope === 'HOMEROOM') || user?.roles.includes('ADMIN');
-  const subject = homeroom ? undefined : mine.find((a) => a.scope === 'SUBJECT')?.subjectKey;
+  // Homeroom teacher, director and admin read every field; a subject teacher only their subject.
+  const fullAccess =
+    mine.some((a) => a.scope === 'HOMEROOM') || can('read', 'Grade', { groupId: g.id });
+  const subject = fullAccess ? undefined : mine.find((a) => a.scope === 'SUBJECT')?.subjectKey;
+  const canCreate = can('create', 'Activity', {
+    groupId: g.id,
+    ...(subject ? { subjectKey: subject } : {}),
+  });
+  const canInvite = can('create', 'Invitation', { groupId: g.id, type: 'GUARDIAN' });
   const fields = subject
     ? FIELD_KEYS.filter((f) => COMPLEMENTARY_BY_FIELD[f] === subject)
     : [...FIELD_KEYS];
   const tabs: { key: Tab; label: string; color?: string }[] = [
     ...fields.map((f) => ({ key: f as Tab, label: FIELD_SHORT_LABELS[f], color: FIELD_COLORS[f] })),
     { key: 'alumnos', label: 'Alumnos' },
-    ...(homeroom ? [{ key: 'notas' as Tab, label: 'Notas de hoy' }] : []),
+    ...(fullAccess ? [{ key: 'notas' as Tab, label: 'Notas de hoy' }] : []),
   ];
   const requested = params.get('campo') as Tab | null;
   const tab: Tab = tabs.some((t) => t.key === requested) ? requested! : tabs[0]!.key;
@@ -97,20 +112,32 @@ export function TeacherGroupPage() {
       <PageHeader
         title={`Grupo ${g.name}`}
         description={`${period ? `${period.name}${period.status === 'OPEN' ? '' : ` (${PERIOD_STATUS_LABELS[period.status].toLowerCase()})`}` : 'Sin periodo'} · ${g.studentCount} alumnos${subject ? ` · ${SUBJECT_LABELS[subject]}` : ''}`}
-        back={{ to: '/maestro', label: 'Mis grupos' }}
+        back={
+          base === '/director'
+            ? { to: '/director', label: 'Tablero' }
+            : { to: '/maestro', label: 'Mis grupos' }
+        }
         actions={
-          homeroom && period ? (
+          fullAccess && period ? (
             <>
               <Button variant="outline" size="sm" asChild>
-                <Link to={`/maestro/grupos/${g.id}/resumen`}>
+                <Link to={`${base}/grupos/${g.id}/resumen`}>
                   <BarChart3 aria-hidden /> Resumen
                 </Link>
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <Link to={`/maestro/grupos/${g.id}/cierre`}>
-                  <ClipboardCheck aria-hidden /> Cierre y boletas
+                <Link to={`${base}/grupos/${g.id}/cierre`}>
+                  <ClipboardCheck aria-hidden />{' '}
+                  {base === '/director' ? 'Boletas' : 'Cierre y boletas'}
                 </Link>
               </Button>
+              {canInvite ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`${base}/grupos/${g.id}/padres`}>
+                    <UsersRound aria-hidden /> Padres de familia
+                  </Link>
+                </Button>
+              ) : null}
             </>
           ) : null
         }
@@ -153,6 +180,7 @@ export function TeacherGroupPage() {
           periodId={period.id}
           fieldKey={tab as FieldKey}
           canEdit={period.status === 'OPEN'}
+          base={base}
         />
       ) : null}
       {isField && !period ? (
@@ -160,10 +188,10 @@ export function TeacherGroupPage() {
           El ciclo aún no tiene periodos. Pide a la administración que los cree.
         </p>
       ) : null}
-      {tab === 'alumnos' ? <StudentsTab groupId={g.id} /> : null}
+      {tab === 'alumnos' ? <StudentsTab groupId={g.id} base={base} /> : null}
       {tab === 'notas' ? <TodayNotesTab groupId={g.id} /> : null}
 
-      {isField && period?.status === 'OPEN' ? (
+      {isField && period?.status === 'OPEN' && canCreate ? (
         <>
           <Button
             size="lg"
@@ -193,12 +221,15 @@ function ActivitiesTab({
   periodId,
   fieldKey,
   canEdit,
+  base,
 }: {
   groupId: string;
   periodId: string;
   fieldKey: FieldKey;
   canEdit: boolean;
+  base: string;
 }) {
+  const { can } = useCan();
   const activities = useActivities(groupId, periodId);
   const remove = useDeleteActivity();
   if (activities.isLoading)
@@ -259,7 +290,7 @@ function ActivitiesTab({
                     aria-hidden
                   />
                   <Link
-                    to={`/maestro/actividades/${activity.id}`}
+                    to={`${base}/actividades/${activity.id}`}
                     className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3"
                   >
                     <span className="min-w-0 flex-1">
@@ -289,7 +320,11 @@ function ActivitiesTab({
                       >
                         <FileDown aria-hidden /> Hoja de captura
                       </DropdownMenuItem>
-                      {canEdit ? (
+                      {canEdit &&
+                      can('delete', 'Activity', {
+                        groupId,
+                        ...(activity.subjectKey ? { subjectKey: activity.subjectKey } : {}),
+                      }) ? (
                         <DropdownMenuItem
                           className="text-destructive"
                           onSelect={() => deleteActivity(activity)}
@@ -314,7 +349,7 @@ function componentTitle(component: Component, sample: ActivityView): string {
   return COMPONENT_LABELS[component];
 }
 
-function StudentsTab({ groupId }: { groupId: string }) {
+function StudentsTab({ groupId, base }: { groupId: string; base: string }) {
   const roster = useRoster(groupId);
   if (roster.isLoading)
     return (
@@ -338,7 +373,7 @@ function StudentsTab({ groupId }: { groupId: string }) {
         {active.map((entry) => (
           <li key={entry.enrollmentId}>
             <Link
-              to={`/maestro/grupos/${groupId}/alumnos/${entry.student.id}`}
+              to={`${base}/grupos/${groupId}/alumnos/${entry.student.id}`}
               className="flex min-h-12 items-center gap-3 px-3 py-2"
             >
               <span className="w-7 text-right font-mono text-sm tabular-nums text-muted-foreground">

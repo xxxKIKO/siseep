@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createStudentSchema, type StudentView } from '@siseep/shared';
-import { LoaderCircle, Pencil, Plus, Search } from 'lucide-react';
+import { createStudentSchema, RELATIONSHIP_LABELS, type StudentView } from '@siseep/shared';
+import { LoaderCircle, Pencil, Plus, Search, Unlink } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
@@ -10,6 +10,7 @@ import {
   useUpdateEnrollment,
   useUpdateStudent,
 } from '@/api/catalog';
+import { useRevokeGuardian, useStudentGuardians } from '@/api/guardian';
 import { PageHeader } from '@/components/PageHeader';
 import { ResponsiveList } from '@/components/ResponsiveList';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { formatDate } from '@/lib/dates';
 import { fieldProps } from '@/lib/form';
 import { ENROLLMENT_STATUS_LABELS } from '@/lib/labels';
 
@@ -248,6 +250,58 @@ function StudentDialog({ student, onDone }: { student?: StudentView; onDone: () 
           {student ? 'Guardar cambios' : 'Dar de alta'}
         </Button>
       </form>
+      {student ? <StudentGuardians studentId={student.id} /> : null}
     </DialogContent>
+  );
+}
+
+/** Guardians linked to the student; the admin can unlink them (stays in the audit log). */
+function StudentGuardians({ studentId }: { studentId: string }) {
+  const guardians = useStudentGuardians(studentId);
+  const revoke = useRevokeGuardian(studentId);
+  return (
+    <section aria-labelledby="guardians-title" className="mt-5 border-t border-border pt-4">
+      <h3 id="guardians-title" className="mb-2 font-semibold">
+        Padres o tutores vinculados
+      </h3>
+      {guardians.isLoading ? (
+        <LoaderCircle className="size-5 animate-spin text-primary" aria-label="Cargando" />
+      ) : guardians.data?.length ? (
+        <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
+          {guardians.data.map((link) => (
+            <li key={link.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">
+                  {link.guardian.name} ({RELATIONSHIP_LABELS[link.relationship]})
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {link.guardian.email} · desde {formatDate(link.linkedAt, "d 'de' MMM yyyy")}
+                </span>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                disabled={revoke.isPending}
+                onClick={() => {
+                  if (
+                    window.confirm(`¿Desvincular a ${link.guardian.name}? Dejará de ver al alumno.`)
+                  ) {
+                    revoke.mutate(link.id);
+                  }
+                }}
+              >
+                <Unlink aria-hidden /> Desvincular
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Ningún familiar vinculado. El maestro titular genera los códigos desde "Padres de
+          familia".
+        </p>
+      )}
+    </section>
   );
 }

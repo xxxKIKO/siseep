@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useStudentGrades, useStudentNotes } from '@/api/capture';
 import { useGroup } from '@/api/catalog';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { useAuth } from '@/auth/auth-context';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
@@ -17,16 +18,22 @@ import { NoteDialog } from './NoteDialog';
 import { StudentSummaryBars } from './StudentSummaryBars';
 import { NotesList } from './NotesList';
 
-/** /maestro/grupos/:groupId/alumnos/:studentId — grades of the period by field + notes. */
+/**
+ * /maestro/grupos/:groupId/alumnos/:studentId (also /director/…) — grades of the period by field
+ * and notes. Full file for whoever reads every grade of the group (CASL), notes only if allowed.
+ */
 export function StudentFilePage() {
   const { groupId = '', studentId = '' } = useParams();
   const { user } = useAuth();
+  const { can } = useCan();
+  const base = usePortalBase();
   const group = useGroup(groupId);
   const periodId = group.data?.currentPeriod?.id;
   const grades = useStudentGrades(studentId, periodId);
-  const homeroom = group.data?.assignments.some(
-    (a) => a.teacher.id === user?.id && a.scope === 'HOMEROOM',
-  );
+  const homeroom =
+    group.data?.assignments.some((a) => a.teacher.id === user?.id && a.scope === 'HOMEROOM') ||
+    can('read', 'Grade', { groupId });
+  const canWriteNote = can('create', 'StudentNote', { groupId });
   const notes = useStudentNotes(studentId, periodId, Boolean(homeroom));
   const [writing, setWriting] = useState(false);
 
@@ -50,11 +57,11 @@ export function StudentFilePage() {
         title={student.fullName}
         description={`N/L ${student.listNumber} · Grupo ${student.groupName} · ${group.data?.currentPeriod?.name ?? ''}`}
         back={{
-          to: `/maestro/grupos/${groupId}?campo=alumnos`,
+          to: `${base}/grupos/${groupId}?campo=alumnos`,
           label: `Grupo ${student.groupName}`,
         }}
         actions={
-          homeroom ? (
+          canWriteNote ? (
             <Button onClick={() => setWriting(true)}>
               <Plus aria-hidden /> Nota
             </Button>

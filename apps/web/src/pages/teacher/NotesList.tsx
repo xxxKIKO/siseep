@@ -3,6 +3,7 @@ import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useDeleteNote } from '@/api/capture';
+import { usePortalBase } from '@/auth/ability';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -30,6 +31,7 @@ export function NotesList({
   empty: string;
 }) {
   const remove = useDeleteNote();
+  const base = usePortalBase();
   const [editing, setEditing] = useState<NoteView | null>(null);
 
   if (!notes?.length)
@@ -56,7 +58,7 @@ export function NotesList({
             </div>
             {showStudent ? (
               <Link
-                to={`/maestro/grupos/${groupId}/alumnos/${note.student.id}`}
+                to={`${base}/grupos/${groupId}/alumnos/${note.student.id}`}
                 className="mt-2 block text-sm font-semibold text-primary"
               >
                 {note.student.listNumber ? `${note.student.listNumber}. ` : ''}

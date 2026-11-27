@@ -17,7 +17,8 @@ import type { Actor } from '../common/request-user';
 import { oid } from '../common/scope';
 import { FilesService } from '../files/files.service';
 import { PeriodStatusService } from '../periods/period-status.service';
-import { Period } from '../periods/period.schema';
+import { Period, type PeriodDocument } from '../periods/period.schema';
+import type { GroupDocument } from '../groups/group.schema';
 import { SchoolYear } from '../school-years/school-year.schema';
 import { School } from '../schools/school.schema';
 import { Enrollment } from '../students/enrollment.schema';
@@ -74,6 +75,18 @@ export class ReportCardsService {
     studentId?: string,
   ): Promise<ReportCardData> {
     const { group, period } = await this.results.loadTarget(groupId, periodId, actor);
+    return this.build(group, period, studentId);
+  }
+
+  /**
+   * Report card data without access checks: callers must have checked them (staff via
+   * `data`, guardians via their active link and a PUBLISHED period).
+   */
+  async build(
+    group: GroupDocument,
+    period: PeriodDocument,
+    studentId?: string,
+  ): Promise<ReportCardData> {
     const [status, data, school, year, teacher] = await Promise.all([
       this.periodStatus.effective(period._id, group._id),
       this.periodData.load(group, period._id),
@@ -172,6 +185,14 @@ export class ReportCardsService {
     return {
       buffer: await buildReportCardsDocx(data),
       fileName: `Boletas ${safe(data.groupName)} - ${safe(data.periodName)}.docx`,
+    };
+  }
+
+  /** One student's report card as PDF from already-built data. */
+  async renderPdf(data: ReportCardData): Promise<ReportFile> {
+    return {
+      buffer: await this.pdf.render(this.html(data)),
+      fileName: `Boleta ${safe(data.cards[0]?.name ?? '')} - ${safe(data.periodName)}.pdf`,
     };
   }
 

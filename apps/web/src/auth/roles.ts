@@ -50,7 +50,8 @@ export function resolveNextPath(next: string | null, roles: readonly Role[]): st
     const allowed = roles.some(
       (role) => next === ROLE_HOME_PATHS[role] || next.startsWith(`${ROLE_HOME_PATHS[role]}/`),
     );
-    if (allowed || next.startsWith('/cuenta')) return next;
+    // /registro: a signed-in guardian finishes redeeming a code after logging in.
+    if (allowed || next.startsWith('/cuenta') || next.startsWith('/registro')) return next;
   }
   return homePathFor(roles);
 }

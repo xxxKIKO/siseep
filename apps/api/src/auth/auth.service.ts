@@ -5,7 +5,10 @@ import {
   type AcceptInviteInput,
   type AccessTokenPayload,
   type AuthResponse,
+  type GuardianCodePreview,
   type LoginInput,
+  type RegisterGuardianInput,
+  Role,
   type ResetPasswordInput,
   type User as PublicUser,
   UserStatus,
@@ -15,6 +18,7 @@ import { Errors } from '../common/app.exception';
 import { randomToken, sha256 } from '../common/crypto';
 import type { RequestUser } from '../common/request-user';
 import { AppConfigService } from '../config/app-config.service';
+import { GuardianInvitationsService } from '../guardians/guardian-invitations.service';
 import { InvitationsService } from '../invitations/invitations.service';
 import { MailService } from '../mail/mail.service';
 import { toPublicUser, type UserDocument } from '../users/user.schema';
@@ -37,6 +41,7 @@ export class AuthService {
     private readonly sessions: SessionsService,
     private readonly passwords: PasswordService,
     private readonly invitations: InvitationsService,
+    private readonly guardianInvitations: GuardianInvitationsService,
     private readonly jwt: JwtService,
     private readonly mail: MailService,
     private readonly config: AppConfigService,
@@ -98,6 +103,42 @@ export class AuthService {
     });
     await this.invitations.consume(invitation, user._id);
     return this.issue(user, await this.sessions.create(user, meta));
+  }
+
+  previewGuardianCode(code: string): Promise<GuardianCodePreview> {
+    return this.guardianInvitations.preview(code);
+  }
+
+  /**
+   * Guardian sign-up with a code: creates the account (GUARDIAN, privacy notice accepted) and
+   * the link in one go. If the code turns out to be unusable, the new account is removed.
+   */
+  async registerGuardian(input: RegisterGuardianInput, meta: ClientMeta): Promise<AuthResult> {
+    const schoolId = await this.guardianInvitations.schoolOf(input.code);
+    if (await this.users.findByEmail(input.email)) {
+      throw Errors.conflict(
+        'Ya existe una cuenta con ese correo. Inicia sesión para vincular a tu hijo(a).',
+      );
+    }
+    const user = await this.users.create({
+      schoolId,
+      email: input.email,
+      passwordHash: await this.passwords.hash(input.password),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      roles: [Role.GUARDIAN],
+    });
+    try {
+      await this.guardianInvitations.redeem(user, input.code, input.relationship, {
+        acceptPrivacy: true,
+        ip: meta.ip,
+      });
+    } catch (error) {
+      await this.users.hardDelete(user._id);
+      throw error;
+    }
+    const fresh = (await this.users.findById(user._id.toString()))!;
+    return this.issue(fresh, await this.sessions.create(fresh, meta));
   }
 
   /** Emails a reset link when the account exists. Always succeeds to not reveal accounts. */

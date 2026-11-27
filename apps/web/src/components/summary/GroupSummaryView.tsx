@@ -15,13 +15,22 @@ interface GroupSummaryViewProps {
   readOnly?: boolean;
   /** Link to a student's file (teacher) or nothing. */
   studentHref?: (studentId: string) => string | undefined;
+  /** Link to capture an activity (default: the teacher portal). */
+  activityHref?: (activityId: string) => string;
 }
 
+const teacherActivity = (activityId: string) => `/maestro/actividades/${activityId}`;
+
 /** Live summary: "Atención" + one card per student (phones) or a table (from 768 px). */
-export function GroupSummaryView({ summary, readOnly, studentHref }: GroupSummaryViewProps) {
+export function GroupSummaryView({
+  summary,
+  readOnly,
+  studentHref,
+  activityHref = teacherActivity,
+}: GroupSummaryViewProps) {
   return (
     <div className="flex flex-col gap-5">
-      <Attention summary={summary} readOnly={readOnly} />
+      <Attention summary={summary} readOnly={readOnly} activityHref={activityHref} />
       <FieldAverages summary={summary} />
       <StudentCards summary={summary} studentHref={studentHref} />
       <StudentTable summary={summary} studentHref={studentHref} />
@@ -34,7 +43,15 @@ export function GroupSummaryView({ summary, readOnly, studentHref }: GroupSummar
   );
 }
 
-function Attention({ summary, readOnly }: { summary: GroupSummary; readOnly?: boolean }) {
+function Attention({
+  summary,
+  readOnly,
+  activityHref,
+}: {
+  summary: GroupSummary;
+  readOnly?: boolean;
+  activityHref: (activityId: string) => string;
+}) {
   const lows = summary.alerts.filter((a) => a.type === 'LOW_6' || a.type === 'LOW_7');
   const byStudent = new Map<string, SummaryAlert[]>();
   for (const alert of lows)
@@ -118,7 +135,7 @@ function Attention({ summary, readOnly }: { summary: GroupSummary; readOnly?: bo
                       <div className="flex min-h-11 items-center gap-2 py-2">{content}</div>
                     ) : (
                       <Link
-                        to={`/maestro/actividades/${a.activityId}`}
+                        to={activityHref(a.activityId)}
                         className="flex min-h-11 items-center gap-2 py-2"
                       >
                         {content}

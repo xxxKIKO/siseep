@@ -19,6 +19,7 @@ apps/
                        users (admin, /me), imports (Excel), summary, closing (cierre y resultados)
     src/periods/       PeriodStatusService: estado del periodo POR GRUPO (periodGroupStatuses)
     src/files/         FilesService: logos en GridFS (escuela y maestro titular)
+    src/guardians/     códigos para padres, guardianLinks y portal /me/children (404 si no es tu hijo)
     src/reports/templates/  plantillas HTML de los PDF (Puppeteer; boleta con Handlebars)
     test/__snapshots__/     PNG de la primera boleta para revisión manual (lo genera la e2e)
     src/scripts/       seed.ts
@@ -32,6 +33,8 @@ apps/
     src/components/ui/ componentes estilo shadcn (se copian, no se instalan)
     src/pages/         pantallas; rutas en src/routes.tsx
     src/pages/teacher/capture/  pantalla Capturar (useCapture: guardado, cola offline, conflictos)
+    src/pages/guardian/  portal de padres; src/pages/public/: /registro y /privacidad
+    src/auth/ability.ts  useCan (reglas CASL de GET /auth/abilities) y usePortalBase
     e2e/               Playwright (iPhone 12): Mongo en memoria + API compilada + vite preview
 packages/
   shared/              esquemas zod, tipos, enums (sección 4), colores, reglas CASL (defineAbilityFor)
@@ -112,6 +115,16 @@ docs/                  plan.md (especificación) y deploy.md (staging)
   una transacción: si hay pendientes o campos parciales responde 422 `PERIOD_INCOMPLETE` con
   `{studentId, fieldKey, activityIds}`; si no, guarda la foto completa en `periodResults`
   (`snapshotAt`). Con el periodo cerrado, resultados y boletas salen de la foto, no del cálculo.
+- **Director y botones de edición**: las pantallas del maestro se reutilizan en `/director/...`.
+  Qué se puede editar sale de `useCan()` (reglas CASL del usuario, incluidos permisos especiales
+  vigentes), nunca de roles fijos. Los enlaces usan `usePortalBase()`.
+- **Portal de padres**: todo pasa por `GuardianPortalService`, que exige un `guardianLink` ACTIVE
+  y responde 404 (no 403) si no existe. Solo actividades con `visibleToGuardians` y
+  `visibleFrom <= ahora`, notas visibles y nunca `SALUD`, boletas solo con el periodo PUBLISHED.
+  Nunca devuelve otros alumnos ni promedios del grupo. Los códigos (8 caracteres sin 0/O/1/I,
+  14 días, un uso, máximo 4 tutores) se guardan solo como hash.
+- **Bitácora legible**: `AuditDescriber` arma la descripción ("Calificación de Ana en 'X': 6 → 8");
+  si agregas una entidad a `AUDIT_ENTITIES`, agrega su caso ahí.
 - **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,
   `component` y `subjectKey` de su actividad para filtrar por grupo y materia sin joins.
 - **Errores**: lanza `AppException` / `Errors.*` (`src/common/app.exception.ts`). La API responde

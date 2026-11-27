@@ -45,6 +45,13 @@ export class User {
   @Prop({ type: Date, default: null })
   lastLoginAt?: Date | null;
 
+  /** Privacy notice accepted by a guardian when linking (version and date). */
+  @Prop({ type: Number, default: null })
+  privacyAcceptedVersion?: number | null;
+
+  @Prop({ type: Date, default: null })
+  privacyAcceptedAt?: Date | null;
+
   @Prop({ type: 'ObjectId', ref: 'User' })
   createdBy?: Types.ObjectId;
 
@@ -68,5 +75,6 @@ export function toPublicUser(user: UserDocument): PublicUser {
     status: user.status,
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
     hasLogo: Boolean(user.logoFileId),
+    privacyAcceptedVersion: user.privacyAcceptedVersion ?? null,
   };
 }

@@ -5,6 +5,13 @@ import {
   loginSchema,
   resetPasswordSchema,
 } from '../src/schemas/auth';
+import {
+  formatGuardianCode,
+  GUARDIAN_CODE_ALPHABET,
+  guardianCodeSchema,
+  maskedStudentName,
+  registerGuardianSchema,
+} from '../src/schemas/guardian';
 import { FIELD_COLORS, PRIMARY_COLOR } from '../src/theme';
 
 describe('auth schemas', () => {
@@ -56,5 +63,40 @@ describe('theme', () => {
       etica: '#A9D08E',
       humano: '#B4A7D6',
     });
+  });
+});
+
+describe('guardian codes', () => {
+  it('normalizes and validates the 8-character code without ambiguous letters', () => {
+    expect(guardianCodeSchema.parse(' abcd-2345 ')).toBe('ABCD2345');
+    expect(formatGuardianCode('ABCD2345')).toBe('ABCD-2345');
+    for (const bad of ['ABCD234', 'ABCD23450', 'ABCD0345', 'ABCDO345', 'ABCD1345', 'ABCDI345']) {
+      expect(guardianCodeSchema.safeParse(bad).success).toBe(false);
+    }
+    expect(GUARDIAN_CODE_ALPHABET).not.toMatch(/[01OI]/);
+  });
+
+  it('masks the student name before linking', () => {
+    expect(
+      maskedStudentName({
+        firstName: 'Edgar Mauricio',
+        lastName1: 'Aguilar',
+        lastName2: 'Contreras',
+      }),
+    ).toBe('Aguilar C. Edgar M.');
+    expect(maskedStudentName({ firstName: 'Ana', lastName1: 'Ruiz' })).toBe('Ruiz Ana');
+  });
+
+  it('requires accepting the privacy notice to register', () => {
+    const base = {
+      code: 'ABCD2345',
+      firstName: 'Laura',
+      lastName: 'Pérez',
+      email: 'laura@example.com',
+      password: 'una-contraseña-larga',
+      relationship: 'MADRE',
+    };
+    expect(registerGuardianSchema.safeParse({ ...base, acceptPrivacy: false }).success).toBe(false);
+    expect(registerGuardianSchema.safeParse({ ...base, acceptPrivacy: true }).success).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { subject } from '@siseep/shared';
 import { CheckPolicies, CurrentUser } from '../common/decorators';
 import type { RequestUser } from '../common/request-user';
 import { CreateStaffInvitationDto } from './invitations.dto';
@@ -13,7 +14,7 @@ export class InvitationsController {
 
   @Post('staff')
   @HttpCode(HttpStatus.CREATED)
-  @CheckPolicies((ability) => ability.can('create', 'Invitation'))
+  @CheckPolicies((ability) => ability.can('create', subject('Invitation', { type: 'STAFF' })))
   @ApiOperation({ summary: 'Invita a una persona del personal (solo admin)' })
   createStaff(
     @Body() dto: CreateStaffInvitationDto,
@@ -23,7 +24,7 @@ export class InvitationsController {
   }
 
   @Get()
-  @CheckPolicies((ability) => ability.can('read', 'Invitation'))
+  @CheckPolicies((ability) => ability.can('read', subject('Invitation', { type: 'STAFF' })))
   @ApiOperation({ summary: 'Invitaciones de personal pendientes (solo admin)' })
   listPending(@CurrentUser() user: RequestUser): Promise<StaffInvitationView[]> {
     return this.invitations.listPendingStaff(user);

@@ -18,6 +18,8 @@ export const userSchema = z.object({
   lastLoginAt: z.string().nullable().optional(),
   /** Has a logo for the report cards (teachers). */
   hasLogo: z.boolean().optional(),
+  /** Version of the privacy notice the user accepted (guardians). */
+  privacyAcceptedVersion: z.number().int().nullable().optional(),
 });
 export type User = z.infer<typeof userSchema>;
 

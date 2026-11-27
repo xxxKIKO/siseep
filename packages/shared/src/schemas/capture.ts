@@ -277,13 +277,24 @@ export const AUDIT_ENTITIES = [
   'note',
   'periodResult',
   'periodStatus',
+  'guardianLink',
 ] as const;
 export type AuditEntity = (typeof AUDIT_ENTITIES)[number];
+
+export const AUDIT_ENTITY_LABELS: Record<AuditEntity, string> = {
+  grade: 'Calificación',
+  activity: 'Actividad',
+  note: 'Nota',
+  periodResult: 'Ajuste u observación',
+  periodStatus: 'Estado del periodo',
+  guardianLink: 'Vínculo de padre o tutor',
+};
 
 export const auditQuerySchema = paginationQuerySchema.extend({
   entity: z.enum(AUDIT_ENTITIES).optional(),
   entityId: objectIdSchema.optional(),
   groupId: objectIdSchema.optional(),
+  actorId: objectIdSchema.optional(),
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
 });
@@ -296,7 +307,10 @@ export interface AuditLogView {
   entity: AuditEntity;
   entityId: string;
   groupId?: string;
+  groupName?: string;
   before: unknown;
   after: unknown;
+  /** Readable change: "Calificación de Ana en 'Proyecto Repaso': 6 → 8". */
+  description: string;
   at: string;
 }
