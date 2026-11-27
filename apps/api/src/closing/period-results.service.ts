@@ -142,7 +142,7 @@ export class PeriodResultsService {
       review: canEditResults && status === 'OPEN',
       close: (status === 'OPEN' || status === 'IN_REVIEW') && (await this.canClose(group, actor)),
       publish: status === 'CLOSED' && actor.ability.can('update', asSubject('Period', target)),
-      reopen: status !== 'OPEN' && actor.user.roles.includes(Role.ADMIN),
+      reopen: status !== 'OPEN' && actor.ability.can('manage', asSubject('Period', target)),
     };
   }
 

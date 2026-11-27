@@ -3,6 +3,7 @@ import { ClipboardCheck, FileSpreadsheet, LoaderCircle, Lock, RotateCcw, Send } 
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
+import { usePortalBase } from '@/auth/ability';
 import { downloadPeriodExcel, usePeriodGroupStatuses, usePeriodTransition } from '@/api/closing';
 import { usePeriods, useSchoolYears } from '@/api/catalog';
 import { PageHeader } from '@/components/PageHeader';
@@ -19,6 +20,7 @@ import { PERIOD_STATUS_LABELS, PERIOD_STATUS_TONES } from '@/lib/labels';
 
 /** /admin/periodos — status of each group per period, with close, publish and reopen. */
 export function PeriodsPage() {
+  const base = usePortalBase();
   const years = useSchoolYears();
   const [yearId, setYearId] = useState('');
   const currentYear = years.data?.find((y) => y.isCurrent) ?? years.data?.[0];
@@ -58,7 +60,7 @@ export function PeriodsPage() {
       <PageHeader
         title="Periodos"
         description="Estado del periodo en cada grupo: revisión, cierre y publicación de boletas."
-        back={{ to: '/admin', label: 'Administración' }}
+        back={{ to: base, label: base === '/director' ? 'Tablero' : 'Administración' }}
       />
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:max-w-xl">
@@ -146,7 +148,7 @@ export function PeriodsPage() {
                   </dl>
                   <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/admin/grupos/${row.groupId}/cierre?periodo=${row.periodId}`}>
+                      <Link to={`${base}/grupos/${row.groupId}/cierre?periodo=${row.periodId}`}>
                         <ClipboardCheck aria-hidden /> Ver cierre
                       </Link>
                     </Button>

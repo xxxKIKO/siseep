@@ -5,7 +5,6 @@ import {
   type PeriodGroupStatusView,
   type PeriodStatus,
   type PeriodTransition,
-  Role,
 } from '@siseep/shared';
 import type { Connection, Model } from 'mongoose';
 import { AuditService } from '../audit/audit.service';
@@ -61,8 +60,8 @@ export class ClosingService {
     const { group, period } = await this.results.loadTarget(groupId, periodId, actor);
     const current = await this.periodStatus.effective(period._id, group._id);
     const target = { schoolId: group.schoolId, groupId: group._id };
-    // Who: review = homeroom teacher (or admin); close = see canClose; publish = admin or the
-    // "Cerrar y publicar periodos" permission; reopen = admin only.
+    // Who: review = homeroom teacher (or admin); close = see canClose; publish = admin, the
+    // direction or the "Cerrar y publicar periodos" permission; reopen = admin or direction.
     const allowed =
       action === 'review'
         ? actor.ability.can('update', asSubject('PeriodResult', target))
@@ -70,7 +69,8 @@ export class ClosingService {
           ? await this.results.canClose(group, actor)
           : action === 'publish'
             ? actor.ability.can('update', asSubject('Period', target))
-            : actor.user.roles.includes(Role.ADMIN);
+            : // Reopen: whoever manages periods (admin, direction); a grant only updates.
+              actor.ability.can('manage', asSubject('Period', target));
     if (!allowed) throw Errors.forbidden();
     if (!FROM[action].includes(current)) {
       throw Errors.invalidTransition(

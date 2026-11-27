@@ -19,7 +19,7 @@ apps/
                        users (admin, /me), imports (Excel), summary, closing (cierre y resultados)
     src/periods/       PeriodStatusService: estado del periodo POR GRUPO (periodGroupStatuses)
     src/files/         FilesService: logos en GridFS (escuela y maestro titular)
-    src/guardians/     códigos para padres, guardianLinks y portal /me/children (404 si no es tu hijo)
+    src/guardians/     cuentas de padres creadas desde el alumno, guardianLinks y portal /me/children
     src/reports/templates/  plantillas HTML de los PDF (Puppeteer; boleta con Handlebars)
     test/__snapshots__/     PNG de la primera boleta para revisión manual (lo genera la e2e)
     src/scripts/       seed.ts y migrate.ts (`pnpm migrate:prod`: índices + ciclo 2026-2027)
@@ -125,11 +125,21 @@ docs/                  plan.md (especificación), deploy.md, go-live.md y manual
 - **Director y botones de edición**: las pantallas del maestro se reutilizan en `/director/...`.
   Qué se puede editar sale de `useCan()` (reglas CASL del usuario, incluidos permisos especiales
   vigentes), nunca de roles fijos. Los enlaces usan `usePortalBase()`.
+- **Cuentas y acceso**: se entra con `username` (`ADM|DIR|MAE|TUT` + año a 2 dígitos + `-` +
+  consecutivo de 4, colección `counters`; ver `UsersService.nextUsername`). El correo es
+  opcional. La escuela crea las cuentas con contraseña temporal (`mustChangePassword`): mientras
+  no la cambie, `PoliciesGuard` responde 403 `PASSWORD_CHANGE_REQUIRED` salvo en rutas con
+  `@AllowTemporaryPassword()`. Perfil y foto en `/me` (`ProfileService`).
+- **Padres**: el titular o la dirección crean la cuenta desde el alumno
+  (`POST /students/:id/guardians`). El teléfono (10 dígitos) identifica a la familia: si ya existe
+  un tutor con ese teléfono en la escuela, se vincula el alumno a esa cuenta. Máximo 4 tutores.
+- **Dirección**: administra escuela, ciclos y periodos (cierra, publica y reabre), grupos y
+  asignaciones, cuentas de maestros y de padres. No toca admins, reglas de cálculo, alumnos,
+  importación ni permisos especiales; calificaciones solo con permiso especial.
 - **Portal de padres**: todo pasa por `GuardianPortalService`, que exige un `guardianLink` ACTIVE
   y responde 404 (no 403) si no existe. Solo actividades con `visibleToGuardians` y
   `visibleFrom <= ahora`, notas visibles y nunca `SALUD`, boletas solo con el periodo PUBLISHED.
-  Nunca devuelve otros alumnos ni promedios del grupo. Los códigos (8 caracteres sin 0/O/1/I,
-  14 días, un uso, máximo 4 tutores) se guardan solo como hash.
+  Nunca devuelve otros alumnos ni promedios del grupo.
 - **Bitácora legible**: `AuditDescriber` arma la descripción ("Calificación de Ana en 'X': 6 → 8");
   si agregas una entidad a `AUDIT_ENTITIES`, agrega su caso ahí.
 - **Denormalización para el alcance**: `grades` copia `groupId`, `periodId`, `fieldKey`,

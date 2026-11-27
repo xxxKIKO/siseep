@@ -2,7 +2,12 @@ import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/com
 import { Reflector } from '@nestjs/core';
 import { AbilityFactory } from '../access/ability.factory';
 import { Errors } from '../common/app.exception';
-import { CHECK_POLICIES_KEY, IS_PUBLIC_KEY, type PolicyHandler } from '../common/decorators';
+import {
+  ALLOW_TEMPORARY_PASSWORD_KEY,
+  CHECK_POLICIES_KEY,
+  IS_PUBLIC_KEY,
+  type PolicyHandler,
+} from '../common/decorators';
 import type { AuthenticatedRequest } from '../common/request-user';
 
 /**
@@ -24,6 +29,12 @@ export class PoliciesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     if (!user) throw Errors.unauthorized();
+    if (
+      user.doc.mustChangePassword &&
+      !this.reflector.getAllAndOverride<boolean>(ALLOW_TEMPORARY_PASSWORD_KEY, targets)
+    ) {
+      throw Errors.passwordChangeRequired();
+    }
 
     const ability = await this.abilities.forUser(user);
     request.ability = ability;

@@ -1,12 +1,13 @@
 import type {
   ActivityView,
-  GuardianInvitationView,
+  CreatedAccountView,
   Paginated,
   AuditLogView,
   PeriodResultsView,
   StudentView,
 } from '@siseep/shared';
 import type request from 'supertest';
+import { activateGuardian, createGuardian } from './guardian-helpers';
 import { createTestContext, type TestContext } from './helpers';
 import { type SchoolSetup, setupSchool } from './school-setup';
 
@@ -92,29 +93,13 @@ describe('Isolation matrix by role (section 2)', () => {
       ids[`result${suffix}`] = results.rows[0]!.id;
     }
     // Guardians: A → 5°B student, B → 4°A student.
-    let n = 0;
-    for (const [role, teacher, studentId] of [
-      ['guardianA', 'teacherA', ids.studentA],
-      ['guardianB', 'teacherB', ids.studentB],
+    for (const [role, teacher, studentId, phone] of [
+      ['guardianA', 'teacherA', id('studentA'), '3121000001'],
+      ['guardianB', 'teacherB', id('studentB'), '3121000002'],
     ] as const) {
-      const invitation = (await ok(teacher, 'post', '/invitations/guardian', {
-        studentId,
-      })) as GuardianInvitationView;
-      n++;
-      const res = await ctx
-        .http()
-        .post('/api/v1/auth/register-guardian')
-        .send({
-          code: invitation.code,
-          firstName: 'Familia',
-          lastName: `Matriz ${n}`,
-          email: `familia.matriz${n}@correo.mx`,
-          password: 'contraseña-de-familia',
-          relationship: 'MADRE',
-          acceptPrivacy: true,
-        });
-      expect(res.status).toBe(200);
-      tokens[role] = res.body.accessToken as string;
+      const res = await createGuardian(ctx, tokens[teacher], studentId, { phone });
+      expect(res.status).toBe(201);
+      tokens[role] = await activateGuardian(ctx, res.body as CreatedAccountView);
     }
   });
 
@@ -146,21 +131,22 @@ describe('Isolation matrix by role (section 2)', () => {
     expect({ label, ...results }).toEqual({ label, ...expected });
   };
 
-  it('admin only: users, school, school years, groups, students, grants, import', async () => {
-    const staff = { director: 403, teacherA: 403, teacherB: 403, english: 403, guardianA: 403 };
-    await expectStatus('users', 'get', () => '/users', { admin: 200, ...staff });
+  it('admin and direction: accounts, school, school years and groups (not teachers or guardians)', async () => {
+    const others = { teacherA: 403, teacherB: 403, english: 403, guardianA: 403 };
+    const staff = { director: 403, ...others };
+    await expectStatus('users', 'get', () => '/users', { admin: 200, director: 200, ...others });
     await expectStatus(
       'school',
       'patch',
       () => '/school',
-      { ...staff },
-      () => ({ city: 'X' }),
+      { director: 200, ...others },
+      () => ({ city: 'Colima' }),
     );
     await expectStatus(
       'create year',
       'post',
       () => '/school-years',
-      { ...staff },
+      { director: 201, ...others },
       () => ({
         name: '2030-2031',
         startDate: '2030-08-31',
@@ -171,7 +157,7 @@ describe('Isolation matrix by role (section 2)', () => {
       'create group',
       'post',
       () => '/groups',
-      { ...staff },
+      { director: 201, ...others },
       () => ({
         schoolYearId: school.year.id,
         grade: 6,
@@ -294,13 +280,19 @@ describe('Isolation matrix by role (section 2)', () => {
     );
   });
 
-  it('guardian codes: homeroom teacher and admin; never the director or other teachers', async () => {
+  it('guardian accounts: homeroom teacher, direction and admin; never other teachers or guardians', async () => {
+    let n = 0;
     await expectStatus(
       'code for A',
       'post',
-      () => '/invitations/guardian',
-      { admin: 201, teacherA: 201, director: 403, teacherB: 403, english: 403, guardianA: 403 },
-      () => ({ studentId: ids.studentA }),
+      () => `/students/${id('studentA')}/guardians`,
+      { admin: 201, director: 201, teacherA: 201, teacherB: 403, english: 403, guardianA: 403 },
+      () => ({
+        firstName: 'Tutor',
+        lastName: 'Matriz',
+        relationship: 'TUTOR',
+        phone: `313000000${n++}`,
+      }),
     );
   });
 
@@ -331,10 +323,11 @@ describe('Isolation matrix by role (section 2)', () => {
     }
   });
 
-  it('close, publish and reopen: teacher only asks for review; reopen is admin only', async () => {
+  it('close, publish and reopen: teacher only asks for review; the direction and the admin close and reopen', async () => {
     const t = (action: string) => () => `/periods/${ids.period}/groups/${ids.groupA}/${action}`;
+    // The direction may close: here it is blocked only because grades are missing (422).
     await expectStatus('close A', 'post', t('close'), {
-      director: 403,
+      director: 422,
       teacherA: 403,
       teacherB: 403,
       english: 403,
@@ -350,7 +343,7 @@ describe('Isolation matrix by role (section 2)', () => {
       'reopen A',
       'post',
       t('reopen'),
-      { director: 403, teacherA: 403, guardianA: 403, admin: 200 },
+      { director: 200, teacherA: 403, guardianA: 403 },
       () => ({ reason: 'Prueba de la matriz' }),
     );
   });

@@ -15,6 +15,7 @@ import {
   LoaderCircle,
   MoreVertical,
   Plus,
+  Settings,
   Trash2,
   UsersRound,
 } from 'lucide-react';
@@ -93,7 +94,8 @@ export function TeacherGroupPage() {
     groupId: g.id,
     ...(subject ? { subjectKey: subject } : {}),
   });
-  const canInvite = can('create', 'Invitation', { groupId: g.id, type: 'GUARDIAN' });
+  const canInvite = can('create', 'GuardianLink', { groupId: g.id });
+  const canConfigure = base === '/director' && can('update', 'Group', { _id: g.id });
   const fields = subject
     ? FIELD_KEYS.filter((f) => COMPLEMENTARY_BY_FIELD[f] === subject)
     : [...FIELD_KEYS];
@@ -135,6 +137,13 @@ export function TeacherGroupPage() {
                 <Button variant="outline" size="sm" asChild>
                   <Link to={`${base}/grupos/${g.id}/padres`}>
                     <UsersRound aria-hidden /> Padres de familia
+                  </Link>
+                </Button>
+              ) : null}
+              {canConfigure ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`${base}/grupos/${g.id}/configurar`}>
+                    <Settings aria-hidden /> Maestros del grupo
                   </Link>
                 </Button>
               ) : null}

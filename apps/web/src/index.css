@@ -61,3 +61,19 @@
     @apply outline-2 outline-offset-2 outline-ring;
   }
 }
+
+/* Printing an access card (CredentialsCard): only the card, nothing else of the page. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+}

@@ -1,20 +1,18 @@
 import type {
   AuditLogView,
-  AuthResponse,
   ChildActivity,
   ChildNote,
   ChildOverview,
   ChildReportCard,
   ChildView,
+  CreatedAccountView,
+  CreateGuardianInput,
   GroupGuardianRow,
-  GuardianCodePreview,
-  GuardianInvitationView,
   GuardianLinkView,
   Paginated,
   PrivacyNoticeView,
-  RedeemGuardianCodeInput,
-  RegisterGuardianInput,
   StudentHistory,
+  TemporaryPasswordView,
 } from '@siseep/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -48,45 +46,37 @@ export function saveBlob(blob: Blob, fileName: string): void {
 export const useGroupGuardians = (groupId: string) =>
   useQuery({
     queryKey: guardianKeys.group(groupId),
-    queryFn: () => api.get<GroupGuardianRow[]>(`/groups/${groupId}/guardian-invitations`),
+    queryFn: () => api.get<GroupGuardianRow[]>(`/groups/${groupId}/guardians`),
   });
 
-export function useCreateGuardianCode(groupId: string) {
+/**
+ * Creates the guardian account from a student (or links the student to the account that already
+ * has that phone). The temporary password comes back only once.
+ */
+export function useCreateGuardian(groupId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (studentId: string) =>
-      api.post<GuardianInvitationView>('/invitations/guardian', { studentId }),
+    mutationFn: ({ studentId, input }: { studentId: string; input: CreateGuardianInput }) =>
+      api.post<CreatedAccountView>(`/students/${studentId}/guardians`, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: guardianKeys.group(groupId) }),
+  });
+}
+
+export function useResetGuardianPassword() {
+  return useMutation({
+    mutationFn: (guardianId: string) =>
+      api.post<TemporaryPasswordView>(`/guardians/${guardianId}/reset-password`),
     onError: (error) => toast.error(errorMessage(error)),
   });
 }
 
-/** Strips to cut, with NEW codes (default: students without a linked guardian). */
-export async function printGuardianCodes(
-  groupId: string,
-  groupName: string,
-  studentIds?: string[],
-): Promise<void> {
-  const blob = await api.blob(`/groups/${groupId}/guardian-codes.pdf`, {
-    method: 'POST',
-    body: { studentIds },
-  });
-  saveBlob(blob, `Códigos para padres ${groupName}.pdf`);
-}
-
-// ---- public: sign-up and privacy notice -------------------------------------------------
+// ---- public: privacy notice -------------------------------------------------
 export const usePrivacyNotice = () =>
   useQuery({
     queryKey: guardianKeys.privacy,
     queryFn: () => api.get<PrivacyNoticeView>('/school/privacy-notice', { auth: false }),
     staleTime: 5 * 60_000,
   });
-
-export const previewGuardianCode = (code: string) =>
-  api.post<GuardianCodePreview>('/auth/guardian-code', { code }, { auth: false });
-
-export const registerGuardian = (input: RegisterGuardianInput) =>
-  api.post<AuthResponse>('/auth/register-guardian', input, { auth: false });
 
 // ---- guardian portal --------------------------------------------------------------------
 export const useChildren = (enabled = true) =>
@@ -95,14 +85,6 @@ export const useChildren = (enabled = true) =>
     enabled,
     queryFn: () => api.get<ChildView[]>('/me/children'),
   });
-
-export function useRedeemCode() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: RedeemGuardianCodeInput) => api.post<ChildView[]>('/me/children', input),
-    onSuccess: (children) => queryClient.setQueryData(guardianKeys.children, children),
-  });
-}
 
 export const useChildOverview = (id: string, periodId: string | undefined) =>
   useQuery({

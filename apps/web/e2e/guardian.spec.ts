@@ -17,18 +17,20 @@ async function call<T>(method: string, path: string, token: string, body?: unkno
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
-let code = '';
+let username = '';
+let temporaryPassword = '';
 let childName = '';
 
 /**
  * Setup through the API, as the admin: grade whatever the other e2e tests left pending, close and
- * publish Periodo I of 5°B, and generate a guardian code for N/L 1.
+ * publish Periodo I of 5°B, and create the guardian account of N/L 1 (username + temporary
+ * password, as the teacher hands them over).
  */
 test.beforeAll(async () => {
   const login = await fetch(`${API}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(E2E.admin),
+    body: JSON.stringify({ username: E2E.admin.email, password: E2E.admin.password }),
   });
   const { accessToken: token } = (await login.json()) as { accessToken: string };
   const groups = await call<{ id: string; name: string; currentPeriod: { id: string } }[]>(
@@ -70,32 +72,43 @@ test.beforeAll(async () => {
 
   const first = view.rows.find((r) => r.student.listNumber === 1)!;
   childName = first.student.shortName;
-  const invitation = await call<{ code: string }>('POST', '/invitations/guardian', token, {
-    studentId: first.student.id,
-  });
-  code = invitation.code;
+  // The school creates the guardian account from the student (teacher or direction).
+  const account = await call<{ username: string; temporaryPassword: string }>(
+    'POST',
+    `/students/${first.student.id}/guardians`,
+    token,
+    {
+      firstName: 'Laura',
+      lastName: 'Familia Prueba',
+      phone: '312 555 0101',
+      relationship: 'MADRE',
+      address: 'Calle Falsa 123, Colima',
+      email: 'laura.familia@e2e.mx',
+    },
+  );
+  username = account.username;
+  temporaryPassword = account.temporaryPassword;
 });
 
-test('a parent redeems the code, sees their child and downloads the published report card', async ({
+test('a parent signs in with the username and temporary password, sees their child and downloads the published report card', async ({
   page,
 }) => {
-  await page.goto(`/registro?codigo=${code}`);
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page.getByText('Vas a vincularte con:')).toBeVisible();
-  await expect(page.getByText(/, 5°B$/)).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('registro-360.png') });
+  await page.goto('/iniciar-sesion');
+  await page.getByLabel('Usuario').fill(username.toLowerCase());
+  await page.getByLabel('Contraseña', { exact: true }).fill(temporaryPassword);
+  await page.getByRole('button', { name: 'Entrar' }).click();
 
-  await page.getByLabel('Tu nombre').fill('Laura');
-  await page.getByLabel('Tus apellidos').fill('Familia Prueba');
-  await page.getByLabel('Parentesco').selectOption('MADRE');
-  await page.getByLabel('Correo electrónico').fill('laura.familia@e2e.mx');
-  await page.getByLabel('Contraseña', { exact: true }).fill('Familia-e2e-2026');
-  await page.getByLabel('Repite la contraseña').fill('Familia-e2e-2026');
-  // Without accepting the privacy notice it does not continue.
-  await page.getByRole('button', { name: 'Crear cuenta y vincular' }).click();
-  await expect(page.getByText('Para continuar acepta el aviso de privacidad')).toBeVisible();
+  // First sign-in: choose their own password and accept the privacy notice.
+  await expect(page).toHaveURL(/\/cambiar-contrasena$/);
+  await expect(page.getByText(`Tu usuario es ${username}`)).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('primer-ingreso-360.png') });
+  await page.getByLabel('Contraseña temporal').fill(temporaryPassword);
+  await page.getByLabel('Nueva contraseña', { exact: true }).fill('Familia-e2e-2026');
+  await page.getByLabel('Repite la nueva contraseña').fill('Familia-e2e-2026');
+  await page.getByRole('button', { name: 'Guardar y entrar' }).click();
+  await expect(page.getByText('Para continuar acepta el aviso de privacidad.')).toBeVisible();
   await page.getByLabel(/Leí y acepto el/).check();
-  await page.getByRole('button', { name: 'Crear cuenta y vincular' }).click();
+  await page.getByRole('button', { name: 'Guardar y entrar' }).click();
 
   // A single child: the portal opens it directly.
   await expect(page).toHaveURL(/\/padres\/hijos\/[a-f\d]{24}$/);

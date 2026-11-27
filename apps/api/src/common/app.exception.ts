@@ -72,6 +72,12 @@ export const Errors = {
       ErrorCode.PERIOD_NOT_OPEN,
       'El periodo no está abierto: ya no se pueden cambiar sus actividades.',
     ),
+  passwordChangeRequired: () =>
+    new AppException(
+      HttpStatus.FORBIDDEN,
+      ErrorCode.PASSWORD_CHANGE_REQUIRED,
+      'Primero cambia tu contraseña temporal.',
+    ),
   periodLocked: () =>
     new AppException(
       HttpStatus.CONFLICT,

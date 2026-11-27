@@ -12,6 +12,7 @@ function userWith(roles: Role[]): User {
   return {
     id: '111111111111111111111111',
     schoolId: '222222222222222222222222',
+    username: 'MAE26-0001',
     email: 'persona@escuela.mx',
     firstName: 'Viry',
     lastName: 'Prueba',

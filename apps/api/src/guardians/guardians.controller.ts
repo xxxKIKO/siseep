@@ -18,38 +18,40 @@ import {
   type ChildOverview,
   type ChildReportCard,
   type ChildView,
-  createGuardianInvitationSchema,
+  type CreatedAccountView,
+  createGuardianSchema,
   type GroupGuardianRow,
-  type GuardianInvitationView,
   type GuardianLinkView,
-  printGuardianCodesSchema,
-  redeemGuardianCodeSchema,
   type StudentHistory,
+  subject,
+  type TemporaryPasswordView,
 } from '@siseep/shared';
 import type { Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { Authenticated, CheckPolicies, CurrentActor } from '../common/decorators';
+import { CheckPolicies, CurrentActor } from '../common/decorators';
 import { ObjectIdPipe } from '../common/object-id.pipe';
-import type { Actor } from '../common/request-user';
-import { UsersService } from '../users/users.service';
-import { GuardianInvitationsService } from './guardian-invitations.service';
+import type { Actor, AuthenticatedRequest } from '../common/request-user';
+import { GuardianAccountsService } from './guardian-accounts.service';
 import { GuardianLinksService } from './guardian-links.service';
 import { GuardianPortalService } from './guardian-portal.service';
 
-class CreateGuardianInvitationDto extends createZodDto(createGuardianInvitationSchema) {}
-class PrintCodesDto extends createZodDto(printGuardianCodesSchema) {}
-class RedeemDto extends createZodDto(redeemGuardianCodeSchema) {}
+class CreateGuardianDto extends createZodDto(createGuardianSchema) {}
 /** Ids are checked by the service: an invalid id is a 404, like any child that is not yours. */
 class PeriodQueryDto extends createZodDto(z.object({ periodId: z.string().min(1).max(64) })) {}
-class HistoryQueryDto extends createZodDto(
-  z.object({ schoolYearId: z.string().min(1).max(64).optional() }),
-) {}
 class OptionalPeriodQueryDto extends createZodDto(
   z.object({ periodId: z.string().min(1).max(64).optional() }),
 ) {}
+class HistoryQueryDto extends createZodDto(
+  z.object({ schoolYearId: z.string().min(1).max(64).optional() }),
+) {}
 
-const canUseGuardianPortal = (ability: AppAbility) => ability.can('read', 'GuardianLink');
+/** Only the guardian's own links (a teacher's or director's GuardianLink rules do not count). */
+const canUseGuardianPortal = (ability: AppAbility, request: AuthenticatedRequest) =>
+  ability.can(
+    'read',
+    subject('GuardianLink', { guardianUserId: request.user.id, status: 'ACTIVE' }),
+  );
 
 function sendPdf(res: Response, buffer: Buffer, fileName: string, fallback: string): void {
   res.setHeader('Content-Type', 'application/pdf');
@@ -66,55 +68,50 @@ function sendPdf(res: Response, buffer: Buffer, fileName: string, fallback: stri
 @Controller()
 export class GuardiansController {
   constructor(
-    private readonly invitations: GuardianInvitationsService,
+    private readonly accounts: GuardianAccountsService,
     private readonly links: GuardianLinksService,
     private readonly portal: GuardianPortalService,
-    private readonly users: UsersService,
   ) {}
 
-  // ---- codes (homeroom teacher or admin) ------------------------------------------
-  @Post('invitations/guardian')
-  @CheckPolicies((ability) => ability.can('create', 'Invitation'))
-  @ApiOperation({ summary: 'Genera un código para padres (8 caracteres, 14 días, un uso)' })
-  create(
-    @Body() body: CreateGuardianInvitationDto,
+  // ---- guardian accounts (homeroom teacher, direction, admin) ---------------------
+  @Post('students/:id/guardians')
+  @CheckPolicies((ability) => ability.can('create', 'GuardianLink'))
+  @ApiOperation({
+    summary:
+      'Crea la cuenta del padre o tutor (usuario TUT26-0001 + contraseña temporal). Si el teléfono ya está registrado, vincula al alumno con esa cuenta',
+  })
+  createGuardian(
+    @Param('id', ObjectIdPipe) id: string,
+    @Body() body: CreateGuardianDto,
     @CurrentActor() actor: Actor,
-  ): Promise<GuardianInvitationView> {
-    return this.invitations.create(body.studentId, body.relationship, actor);
+  ): Promise<CreatedAccountView> {
+    return this.accounts.createForStudent(id, body, actor);
   }
 
-  @Get('groups/:id/guardian-invitations')
-  @CheckPolicies((ability) => ability.can('read', 'Invitation'))
-  @ApiOperation({ summary: 'Padres de familia del grupo: vinculado, pendiente o sin código' })
+  @Get('groups/:id/guardians')
+  @CheckPolicies((ability) => ability.can('read', 'GuardianLink'))
+  @ApiOperation({ summary: 'Padres de familia del grupo: tutores vinculados por alumno' })
   listForGroup(
     @Param('id', ObjectIdPipe) id: string,
     @CurrentActor() actor: Actor,
   ): Promise<GroupGuardianRow[]> {
-    return this.invitations.listForGroup(id, actor);
+    return this.accounts.listForGroup(id, actor);
   }
 
-  @Post('groups/:id/guardian-codes.pdf')
+  @Post('guardians/:id/reset-password')
   @HttpCode(HttpStatus.OK)
-  @CheckPolicies((ability) => ability.can('create', 'Invitation'))
-  @ApiProduces('application/pdf')
-  @ApiOperation({
-    summary: 'Tiras recortables con códigos nuevos (por defecto, alumnos sin tutor vinculado)',
-  })
-  async print(
+  @CheckPolicies((ability) => ability.can('create', 'GuardianLink'))
+  @ApiOperation({ summary: 'Nueva contraseña temporal para un padre o tutor' })
+  resetGuardianPassword(
     @Param('id', ObjectIdPipe) id: string,
-    @Body() body: PrintCodesDto,
     @CurrentActor() actor: Actor,
-    @Res() res: Response,
-  ): Promise<void> {
-    const { pdf, fileName, count } = await this.invitations.printStrips(id, body.studentIds, actor);
-    res.setHeader('X-Codes-Count', String(count));
-    sendPdf(res, pdf, fileName, 'codigos-padres.pdf');
+  ): Promise<TemporaryPasswordView> {
+    return this.accounts.resetPassword(id, actor);
   }
 
-  // ---- admin: guardians of a student ---------------------------------------------
   @Get('students/:id/guardians')
-  @CheckPolicies((ability) => ability.can('delete', 'GuardianLink'))
-  @ApiOperation({ summary: 'Tutores vinculados al alumno (admin)' })
+  @CheckPolicies((ability) => ability.can('read', 'GuardianLink'))
+  @ApiOperation({ summary: 'Tutores vinculados al alumno' })
   guardiansOf(
     @Param('id', ObjectIdPipe) id: string,
     @CurrentActor() actor: Actor,
@@ -125,25 +122,12 @@ export class GuardiansController {
   @Delete('guardian-links/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @CheckPolicies((ability) => ability.can('delete', 'GuardianLink'))
-  @ApiOperation({ summary: 'Desvincula a un tutor (admin)' })
+  @ApiOperation({ summary: 'Desvincula a un tutor (admin o dirección)' })
   revoke(@Param('id', ObjectIdPipe) id: string, @CurrentActor() actor: Actor): Promise<void> {
     return this.links.revoke(id, actor);
   }
 
-  @Authenticated()
   // ---- guardian portal -------------------------------------------------------------
-  @Post('me/children')
-  @ApiOperation({ summary: 'Canjea otro código ("Agregar hijo")' })
-  async redeem(@Body() body: RedeemDto, @CurrentActor() actor: Actor): Promise<ChildView[]> {
-    const user = await this.users.findById(actor.user.id);
-    if (!user) throw new Error('User not found');
-    await this.invitations.redeem(user, body.code, body.relationship, {
-      acceptPrivacy: body.acceptPrivacy,
-      ip: actor.ip,
-    });
-    return this.portal.children(actor);
-  }
-
   @Get('me/children')
   @CheckPolicies(canUseGuardianPortal)
   @ApiOperation({ summary: 'Mis hijos (padre o tutor)' })

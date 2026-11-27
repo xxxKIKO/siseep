@@ -2,6 +2,7 @@ import { FIELD_COLORS, type GradingScheme, gradingSchemeSchema } from '@siseep/s
 import { LoaderCircle, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { useGradingScheme, useSaveGradingScheme, useSchoolYears } from '@/api/catalog';
 import { PageHeader } from '@/components/PageHeader';
 import { Alert } from '@/components/ui/alert';
@@ -84,6 +85,8 @@ function SchemeEditor({
   yearName: string;
   saved: GradingScheme;
 }) {
+  const base = usePortalBase();
+  const canEdit = useCan().can('update', 'GradingScheme', {});
   const save = useSaveGradingScheme(yearId);
   const [draft, setDraft] = useState<GradingScheme>(() => structuredClone(saved));
 
@@ -102,7 +105,7 @@ function SchemeEditor({
       <PageHeader
         title="Reglas de cálculo"
         description={`Ciclo ${yearName}. Calificación del campo = desempeño + proyectos + exámenes, mezclada con la materia complementaria cuando aplica.`}
-        back={{ to: '/admin/ciclos', label: 'Ciclos y periodos' }}
+        back={{ to: `${base}/ciclos`, label: 'Ciclos y periodos' }}
       />
       <div className="flex flex-col gap-4">
         {draft.fields.map((field, index) => {
@@ -219,18 +222,24 @@ function SchemeEditor({
           </Alert>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => validation.success && save.mutate(validation.data)}
-            disabled={!validation.success || save.isPending}
-          >
-            {save.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
-            Guardar reglas
-          </Button>
-          <Button variant="ghost" onClick={() => setDraft(structuredClone(saved))}>
-            <RotateCcw aria-hidden /> Descartar cambios
-          </Button>
-        </div>
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => validation.success && save.mutate(validation.data)}
+              disabled={!validation.success || save.isPending}
+            >
+              {save.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
+              Guardar reglas
+            </Button>
+            <Button variant="ghost" onClick={() => setDraft(structuredClone(saved))}>
+              <RotateCcw aria-hidden /> Descartar cambios
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Solo lectura: las reglas de cálculo las cambia la administración.
+          </p>
+        )}
       </div>
     </div>
   );

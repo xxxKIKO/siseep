@@ -215,7 +215,7 @@ describe('Catalogs (e2e)', () => {
   });
 
   describe('users (admin)', () => {
-    it('lists, changes roles, disables and forces a password reset', async () => {
+    it('lists, changes roles, disables and resets to a temporary password', async () => {
       const list = await admin().get('/users?role=TEACHER');
       expect(list.status).toBe(200);
       expect(list.body.total).toBe(3);
@@ -225,17 +225,16 @@ describe('Catalogs (e2e)', () => {
       expect(roles.body.roles).toEqual(['TEACHER', 'DIRECTOR']);
 
       const reset = await admin().post(`/users/${viry}/reset-password`);
-      expect(reset.status).toBe(204);
-      expect(ctx.mail.lastTo(school.viry.email)?.text).toContain(
-        'La administración de la escuela pidió',
-      );
+      expect(reset.status).toBe(200);
+      expect(reset.body).toMatchObject({ username: school.viry.username });
+      expect(reset.body.temporaryPassword).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{2}$/);
 
       const disabled = await admin().post(`/users/${school.otherTeacher.id}/disable`);
       expect(disabled.body.status).toBe('DISABLED');
       const login = await ctx
         .http()
         .post('/api/v1/auth/login')
-        .send({ email: school.otherTeacher.email, password: school.otherTeacher.password });
+        .send({ username: school.otherTeacher.username, password: school.otherTeacher.password });
       expect(login.status).toBe(403);
       expect(login.body.code).toBe('ACCOUNT_DISABLED');
       expect((await admin().post(`/users/${school.otherTeacher.id}/enable`)).body.status).toBe(

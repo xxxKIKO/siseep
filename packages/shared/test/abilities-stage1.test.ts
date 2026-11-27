@@ -75,12 +75,16 @@ describe('DIRECTOR', () => {
     expect(ability.can('read', subject('Student', { schoolId: OTHER_SCHOOL }))).toBe(false);
   });
 
-  it('cannot edit without a grant', () => {
+  it('cannot edit grades without a grant, but administers groups of their school', () => {
     const ability = defineAbilityFor(director);
     expect(ability.can('update', subject('Grade', { schoolId: SCHOOL, groupId: GROUP_5B }))).toBe(
       false,
     );
-    expect(ability.can('create', 'Group')).toBe(false);
+    expect(
+      ability.can('create', subject('Activity', { schoolId: SCHOOL, groupId: GROUP_5B })),
+    ).toBe(false);
+    expect(ability.can('create', subject('Group', { schoolId: SCHOOL }))).toBe(true);
+    expect(ability.can('create', subject('Group', { schoolId: OTHER_SCHOOL }))).toBe(false);
   });
 
   it('edits only where an active grant applies', () => {
@@ -157,20 +161,20 @@ describe('scopeFilter', () => {
 });
 
 // Permission tests: never delete or skip (see CLAUDE.md).
-describe('stage 5: guardian codes and guardian links', () => {
-  it('the homeroom teacher creates guardian codes only for their group, never staff invitations', () => {
+describe('guardian accounts and guardian links', () => {
+  it('the homeroom teacher creates guardian accounts only for the students of their group', () => {
     const ability = defineAbilityFor(user(['TEACHER']), {
       assignments: [
         { groupId: GROUP_5B, scope: 'HOMEROOM' },
         { groupId: GROUP_4A, scope: 'SUBJECT', subjectKey: 'ingles' },
       ],
     });
-    const invitation = (groupId: string, type: string) =>
-      subject('Invitation', { schoolId: SCHOOL, groupId, type });
-    expect(ability.can('create', invitation(GROUP_5B, 'GUARDIAN'))).toBe(true);
-    expect(ability.can('create', invitation(GROUP_4A, 'GUARDIAN'))).toBe(false);
-    expect(ability.can('create', invitation(GROUP_5B, 'STAFF'))).toBe(false);
-    expect(ability.can('create', subject('Invitation', { type: 'STAFF' }))).toBe(false);
+    const link = (groupId: string) => subject('GuardianLink', { schoolId: SCHOOL, groupId });
+    expect(ability.can('create', link(GROUP_5B))).toBe(true);
+    expect(ability.can('create', link(GROUP_4A))).toBe(false);
+    expect(ability.can('delete', link(GROUP_5B))).toBe(false);
+    expect(ability.can('create', 'Invitation')).toBe(false);
+    expect(ability.can('create', subject('User', { schoolId: SCHOOL }))).toBe(false);
   });
 
   it('a guardian reads only their own active links and nothing else', () => {
@@ -191,17 +195,17 @@ describe('stage 5: guardian codes and guardian links', () => {
         subject('GuardianLink', { guardianUserId: guardian.id, status: 'REVOKED' }),
       ),
     ).toBe(false);
-    expect(ability.can('create', 'Invitation')).toBe(false);
+    expect(ability.can('create', 'GuardianLink')).toBe(false);
     expect(ability.can('read', 'AuditLog')).toBe(false);
   });
 
-  it('the director does not create guardian codes', () => {
+  it('the director creates and removes guardian links in any group of the school', () => {
     const ability = defineAbilityFor(user(['DIRECTOR']));
+    const link = { schoolId: SCHOOL, groupId: GROUP_5B };
+    expect(ability.can('create', subject('GuardianLink', link))).toBe(true);
+    expect(ability.can('delete', subject('GuardianLink', link))).toBe(true);
     expect(
-      ability.can(
-        'create',
-        subject('Invitation', { schoolId: SCHOOL, groupId: GROUP_5B, type: 'GUARDIAN' }),
-      ),
+      ability.can('create', subject('GuardianLink', { schoolId: OTHER_SCHOOL, groupId: GROUP_5B })),
     ).toBe(false);
   });
 });

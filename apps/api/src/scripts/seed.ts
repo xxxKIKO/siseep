@@ -111,7 +111,7 @@ async function main(): Promise<void> {
     ];
 
     for (const account of accounts) {
-      const { created } = await users.upsertSeedUser({
+      const { user, created } = await users.upsertSeedUser({
         schoolId: school._id,
         email: account.email,
         passwordHash: await passwords.hash(account.password),
@@ -119,7 +119,9 @@ async function main(): Promise<void> {
         lastName: account.lastName,
         roles: account.roles,
       });
-      logger.log(`${account.label}: ${created ? 'creada' : 'ya existía (contraseña sin cambios)'}`);
+      logger.log(
+        `${account.label}: usuario ${user.username} — ${created ? 'creada' : 'ya existía (contraseña sin cambios)'}`,
+      );
     }
     logger.log('Seed terminado.');
   } finally {

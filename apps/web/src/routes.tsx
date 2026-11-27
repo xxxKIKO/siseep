@@ -1,7 +1,13 @@
 import { ROLE_HOME_PATHS, type Role } from '@siseep/shared/core';
 import { lazy, type ReactNode, Suspense } from 'react';
 import type { RouteObject } from 'react-router';
-import { GuestOnly, RequireAuth, RequireRole, RootRedirect } from '@/auth/guards';
+import {
+  GuestOnly,
+  RequireAuth,
+  RequireRole,
+  RequireTemporaryPassword,
+  RootRedirect,
+} from '@/auth/guards';
 import { FullPageSpinner } from '@/components/FullPageSpinner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -25,7 +31,7 @@ const AccountPage = lazyPage(publicPages, 'AccountPage');
 const AcceptInvitePage = lazyPage(publicPages, 'AcceptInvitePage');
 const ForgotPasswordPage = lazyPage(publicPages, 'ForgotPasswordPage');
 const ResetPasswordPage = lazyPage(publicPages, 'ResetPasswordPage');
-const GuardianSignUpPage = lazyPage(publicPages, 'GuardianSignUpPage');
+const ChangePasswordPage = lazyPage(publicPages, 'ChangePasswordPage');
 const PrivacyPage = lazyPage(publicPages, 'PrivacyPage');
 const AdminHomePage = lazyPage(admin, 'AdminHomePage');
 const GradingSchemePage = lazyPage(admin, 'GradingSchemePage');
@@ -47,8 +53,14 @@ const StudentFilePage = lazyPage(teacher, 'StudentFilePage');
 const TeacherGroupPage = lazyPage(teacher, 'TeacherGroupPage');
 const TeacherHomePage = lazyPage(teacher, 'TeacherHomePage');
 const AuditPage = lazyPage(director, 'AuditPage');
+const DirectorGroupsPage = lazyPage(director, 'GroupsPage');
+const DirectorGroupDetailPage = lazyPage(director, 'GroupDetailPage');
+const DirectorSchoolYearsPage = lazyPage(director, 'SchoolYearsPage');
+const DirectorGradingSchemePage = lazyPage(director, 'GradingSchemePage');
+const DirectorPeriodsPage = lazyPage(director, 'PeriodsPage');
+const DirectorUsersPage = lazyPage(director, 'UsersPage');
+const DirectorSchoolPage = lazyPage(director, 'SchoolPage');
 const DirectorDashboardPage = lazyPage(director, 'DirectorDashboardPage');
-const AddChildPage = lazyPage(guardian, 'AddChildPage');
 const ChildPage = lazyPage(guardian, 'ChildPage');
 const GuardianHomePage = lazyPage(guardian, 'GuardianHomePage');
 
@@ -71,10 +83,19 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
       element: <AdminClosingPage backTo={() => ({ to: '/admin/periodos', label: 'Periodos' })} />,
     },
   ],
-  // The director reuses the teacher screens: editing depends on the CASL ability (grants).
+  // The director reuses the teacher screens (editing grades depends on grants) and runs the
+  // school with the admin screens: groups, school years, period closing, accounts, settings.
   DIRECTOR: [
     { index: true, element: <DirectorDashboardPage /> },
+    { path: 'grupos', element: <DirectorGroupsPage /> },
     { path: 'grupos/:groupId', element: <TeacherGroupPage /> },
+    { path: 'grupos/:groupId/configurar', element: <DirectorGroupDetailPage /> },
+    { path: 'grupos/:groupId/padres', element: <GuardiansPage /> },
+    { path: 'ciclos', element: <DirectorSchoolYearsPage /> },
+    { path: 'ciclos/:yearId/reglas', element: <DirectorGradingSchemePage /> },
+    { path: 'periodos', element: <DirectorPeriodsPage /> },
+    { path: 'usuarios', element: <DirectorUsersPage /> },
+    { path: 'escuela', element: <DirectorSchoolPage /> },
     { path: 'grupos/:groupId/resumen', element: <GroupSummaryPage /> },
     { path: 'grupos/:groupId/alumnos/:studentId', element: <StudentFilePage /> },
     {
@@ -107,7 +128,6 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
   GUARDIAN: [
     { index: true, element: <GuardianHomePage /> },
     { path: 'hijos/:studentId', element: <ChildPage /> },
-    { path: 'agregar', element: <AddChildPage /> },
   ],
 };
 
@@ -132,7 +152,12 @@ export const routes: RouteObject[] = [
   },
   { path: '/restablecer', element: suspended(<ResetPasswordPage />) },
   { path: '/invitacion', element: suspended(<AcceptInvitePage />) },
-  { path: '/registro', element: suspended(<GuardianSignUpPage />) },
+  {
+    path: '/cambiar-contrasena',
+    element: (
+      <RequireTemporaryPassword>{suspended(<ChangePasswordPage />)}</RequireTemporaryPassword>
+    ),
+  },
   { path: '/privacidad', element: suspended(<PrivacyPage />) },
   {
     element: (

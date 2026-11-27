@@ -18,7 +18,7 @@ export function LoginPage() {
   const { login } = useAuth();
   const form = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { username: '', password: '' },
   });
   // On success GuestOnly redirects to `?siguiente=` or the user's portal.
   const mutation = useMutation({ mutationFn: login });
@@ -27,7 +27,7 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Iniciar sesión"
-      description="Entra con el correo que registró la escuela."
+      description="Entra con el usuario que te dio la escuela (por ejemplo MAE26-0001)."
       footer={
         <span className="flex flex-col gap-2 text-muted-foreground">
           <span>
@@ -49,15 +49,15 @@ export function LoginPage() {
       >
         {mutation.isError ? <Alert>{errorMessage(mutation.error)}</Alert> : null}
 
-        <FormField id="email" label="Correo electrónico" error={errors.email?.message}>
+        <FormField id="username" label="Usuario" error={errors.username?.message}>
           <Input
-            {...fieldProps('email', errors.email?.message)}
-            type="email"
-            inputMode="email"
+            {...fieldProps('username', errors.username?.message)}
             autoComplete="username"
-            autoCapitalize="none"
-            placeholder="nombre@ejemplo.com"
-            {...form.register('email')}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="MAE26-0001"
+            {...form.register('username')}
           />
         </FormField>
 

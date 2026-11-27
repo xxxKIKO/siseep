@@ -16,3 +16,9 @@ export function safeEqualHex(a: string, b: string): boolean {
   const bufferB = Buffer.from(b, 'hex');
   return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);
 }
+
+/** "K7MP-3QXH-9R": temporary password from the unambiguous alphabet (no 0/O/1/I/L). */
+export function temporaryPassword(alphabet: string): string {
+  const chars = Array.from(randomBytes(10), (byte) => alphabet[byte % alphabet.length]).join('');
+  return `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8)}`;
+}

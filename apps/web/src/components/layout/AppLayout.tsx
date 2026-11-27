@@ -6,6 +6,7 @@ import { FullPageSpinner } from '@/components/FullPageSpinner';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/auth-context';
 import { defaultRoleFor, roleFromPath } from '@/auth/roles';
+import { Avatar } from '@/components/ProfileCards';
 import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
@@ -78,8 +79,18 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="border-t border-white/15 p-3">
-          <p className="truncate px-2 text-sm font-medium">{fullName}</p>
-          <p className="truncate px-2 text-xs text-white/70">{ROLE_LABELS[activeRole]}</p>
+          <NavLink
+            to="/cuenta"
+            className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-white/10"
+          >
+            <Avatar user={user} size={36} />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium">{fullName}</span>
+              <span className="block truncate text-xs text-white/70">
+                {user.username} · {ROLE_LABELS[activeRole]}
+              </span>
+            </span>
+          </NavLink>
           <Button
             variant="ghost"
             className="mt-2 w-full justify-start text-white hover:bg-white/10"
@@ -94,10 +105,15 @@ export function AppLayout() {
       <header className="sticky top-0 z-20 border-b border-border bg-card lg:hidden">
         <FieldColorStrip />
         <div className="flex items-center justify-between gap-3 px-4 py-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-primary">{SCHOOL_SHORT_NAME}</p>
-            <p className="truncate text-xs text-muted-foreground">{fullName}</p>
-          </div>
+          <NavLink to="/cuenta" className="flex min-w-0 items-center gap-3">
+            <Avatar user={user} size={36} />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-primary">
+                {SCHOOL_SHORT_NAME}
+              </span>
+              <span className="block truncate text-xs text-muted-foreground">{fullName}</span>
+            </span>
+          </NavLink>
           {user.roles.length > 1 ? (
             <div className="w-44 shrink-0">
               <RoleSwitcher roles={user.roles} activeRole={activeRole} />

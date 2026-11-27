@@ -110,6 +110,14 @@ const SCHOOL_READABLE: SubjectName[] = [
   'Report',
   'AuditLog',
 ];
+/** What the direction administers in its school (stage 6 changes requested by the school). */
+const DIRECTOR_MANAGED: SubjectName[] = [
+  'SchoolYear',
+  'Period',
+  'Group',
+  'TeachingAssignment',
+  'GuardianLink',
+];
 /** Day-to-day work of the homeroom teacher on their group. */
 const HOMEROOM_WORK: SubjectName[] = ['Activity', 'Grade', 'PeriodResult'];
 /** A subject teacher (English, PE) only works on activities and grades of their subject. */
@@ -121,11 +129,15 @@ const CRUD: Action[] = ['create', 'read', 'update', 'delete'];
  * web (to hide buttons). The API is always the source of truth.
  *
  * - ADMIN: everything.
- * - DIRECTOR: reads the whole school; writes only through an active permission grant.
+ * - DIRECTOR: reads the whole school and runs it: school settings, school years and periods
+ *   (closing, publishing and reopening), groups and teacher assignments, staff accounts (the
+ *   service limits which roles) and guardian accounts. Grades, activities, notes and period
+ *   adjustments still need an active permission grant; grading rules, students and the Excel
+ *   import stay with the admin.
  * - TEACHER: reads and writes in the groups they teach. A SUBJECT assignment is limited to its
  *   `subjectKey` (the English teacher never sees Saberes). Homeroom teachers read every note of
  *   their group but only edit their own; each teacher reads the audit log of their groups.
- *   The homeroom teacher also generates guardian codes for the students of their group.
+ *   The homeroom teacher also creates the guardian accounts of the students of their group.
  * - GUARDIAN: nothing in the school catalogs; only their own guardian links (the portal checks
  *   each child against an active link and answers 404 otherwise).
  *
@@ -159,6 +171,10 @@ export function defineAbilityFor(
 
   if (user.roles.includes(Role.DIRECTOR)) {
     can('read', SCHOOL_READABLE, { schoolId });
+    can('manage', DIRECTOR_MANAGED, { schoolId });
+    // The school document is identified by its own _id.
+    can(['read', 'update'], 'School', { _id: schoolId });
+    can(['create', 'read', 'update'], 'User', { schoolId });
   }
 
   if (user.roles.includes(Role.TEACHER)) {
@@ -173,7 +189,7 @@ export function defineAbilityFor(
         can(['create', 'read'], 'StudentNote', { groupId, schoolId });
         can(['update', 'delete'], 'StudentNote', { groupId, schoolId, authorId: user.id });
         can('read', 'AuditLog', { groupId, schoolId });
-        can(['create', 'read'], 'Invitation', { groupId, schoolId, type: 'GUARDIAN' });
+        can(['create', 'read'], 'GuardianLink', { groupId, schoolId });
       } else if (assignment.subjectKey) {
         can(CRUD, SUBJECT_WORK, { groupId, schoolId, subjectKey: assignment.subjectKey });
         can('read', 'AuditLog', { groupId, schoolId, subjectKey: assignment.subjectKey });

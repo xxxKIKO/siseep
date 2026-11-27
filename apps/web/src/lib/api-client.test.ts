@@ -8,6 +8,7 @@ const session = (token: string): AuthResponse => ({
   user: {
     id: '111111111111111111111111',
     schoolId: '222222222222222222222222',
+    username: 'MAE26-0001',
     email: 'viry@escuela.mx',
     firstName: 'Viry',
     lastName: '',

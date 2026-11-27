@@ -4,7 +4,7 @@
 
 ## Entrar
 
-1. Abre el correo de invitación, toca el enlace y crea tu contraseña (al menos 10 caracteres).
+1. Entra con tu usuario (DIR26-…) y la contraseña temporal que te dieron; elige la tuya (al menos 10 caracteres).
 2. En el celular: **Mi cuenta → Instalar en tu celular**.
 
 ## Ver cómo va la escuela
@@ -15,6 +15,14 @@
 4. Toca un alumno para ver su ficha completa y el comparativo entre periodos.
 
 Todo es de solo lectura: no verás botones para cambiar calificaciones. Si necesitas corregir algo, pide a la administración un **permiso especial** (por grupo y con fecha de vencimiento); mientras esté vigente verás los botones de edición solo en ese grupo.
+
+## Administrar la escuela
+
+1. **Usuarios**: agrega maestros (se crea su usuario y una contraseña temporal) o desactívalos.
+2. **Grupos → Maestros del grupo**: asigna el titular y los maestros de Inglés y Ed. Física.
+3. **Ciclos y periodos**: crea el ciclo y sus periodos. **Cierre de periodos**: cierra, publica y reabre (con motivo).
+4. **Escuela**: datos, logo y aviso de privacidad.
+5. En cada grupo, **Padres de familia**: crea las cuentas de padres desde el alumno.
 
 ## Boletas
 

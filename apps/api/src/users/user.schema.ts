@@ -13,8 +13,13 @@ export class User {
   @Prop({ type: 'ObjectId', ref: 'School', required: true, index: true })
   schoolId!: Types.ObjectId;
 
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
-  email!: string;
+  /** Login: "MAE26-0001" (type + year + consecutive). Assigned by UsernameService. */
+  @Prop({ type: String, uppercase: true, trim: true })
+  username?: string;
+
+  /** Optional (profile, password recovery). Unique when present. */
+  @Prop({ type: String, lowercase: true, trim: true, default: null })
+  email?: string | null;
 
   /** argon2id hash. Never selected by default. */
   @Prop({ type: String, select: false, default: null })
@@ -26,8 +31,16 @@ export class User {
   @Prop({ trim: true, default: '' })
   lastName!: string;
 
-  @Prop({ trim: true })
-  phone?: string;
+  /** 10 digits. For guardians it identifies the same person across siblings. */
+  @Prop({ type: String, trim: true, default: null })
+  phone?: string | null;
+
+  @Prop({ type: String, trim: true, default: null })
+  address?: string | null;
+
+  /** Created with a temporary password: must choose their own before using the system. */
+  @Prop({ default: false })
+  mustChangePassword!: boolean;
 
   @Prop({ type: [String], enum: ROLES, required: true })
   roles!: Role[];
@@ -35,8 +48,9 @@ export class User {
   @Prop({ type: String, enum: USER_STATUSES, default: UserStatus.ACTIVE })
   status!: UserStatus;
 
-  @Prop({ type: 'ObjectId' })
-  avatarFileId?: Types.ObjectId;
+  /** Profile photo (GridFS). Students never have one. */
+  @Prop({ type: 'ObjectId', default: null })
+  avatarFileId?: Types.ObjectId | null;
 
   /** Teacher's logo, printed on the right of the report card header. */
   @Prop({ type: 'ObjectId', default: null })
@@ -61,16 +75,29 @@ export class User {
 
 export type UserDocument = HydratedDocument<User>;
 export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index(
+  { username: 1 },
+  { unique: true, partialFilterExpression: { username: { $type: 'string' } } },
+);
+UserSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { email: { $type: 'string' } } },
+);
+UserSchema.index({ schoolId: 1, phone: 1 });
 
 /** Maps a user document to the public shape returned by the API. */
 export function toPublicUser(user: UserDocument): PublicUser {
   return {
     id: user._id.toString(),
     schoolId: user.schoolId.toString(),
-    email: user.email,
+    username: user.username ?? '',
+    email: user.email ?? null,
     firstName: user.firstName,
     lastName: user.lastName,
-    ...(user.phone ? { phone: user.phone } : {}),
+    phone: user.phone ?? null,
+    address: user.address ?? null,
+    hasPhoto: Boolean(user.avatarFileId),
+    mustChangePassword: Boolean(user.mustChangePassword),
     roles: user.roles,
     status: user.status,
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,

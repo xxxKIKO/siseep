@@ -13,8 +13,9 @@ export const LOGIN_THROTTLER = 'login';
 export class LoginThrottlerGuard extends ThrottlerGuard {
   protected override async getTracker(req: Record<string, unknown>): Promise<string> {
     const request = req as unknown as Request;
-    const body = request.body as { email?: unknown } | undefined;
-    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
-    return `${request.ip ?? 'unknown'}|${email}`;
+    const body = request.body as { username?: unknown; email?: unknown } | undefined;
+    const id = typeof body?.username === 'string' ? body.username : body?.email;
+    const account = typeof id === 'string' ? id.trim().toLowerCase() : '';
+    return `${request.ip ?? 'unknown'}|${account}`;
   }
 }

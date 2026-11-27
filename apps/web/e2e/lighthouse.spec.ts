@@ -20,7 +20,7 @@ async function session(credentials: { email: string; password: string }) {
   const res = await fetch(`${API}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({ username: credentials.email, password: credentials.password }),
   });
   const cookie = (res.headers.get('set-cookie') ?? '').split(';')[0]!;
   const { accessToken } = (await res.json()) as { accessToken: string };

@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   type LucideIcon,
   School,
-  UserPlus,
   UserRound,
   Users,
   UsersRound,
@@ -54,17 +53,18 @@ export function navItemsFor(role: Role): NavItem[] {
   }
   if (role === 'DIRECTOR') {
     return [
-      { ...home, label: 'Tablero', icon: LayoutDashboard, end: false },
-      { to: '/director/bitacora', label: 'Bitácora', icon: History, mobile: true },
+      { ...home, label: 'Tablero', icon: LayoutDashboard, end: true },
+      { to: '/director/grupos', label: 'Grupos', icon: UsersRound, mobile: true },
+      { to: '/director/periodos', label: 'Cierre de periodos', icon: ClipboardCheck, mobile: true },
+      { to: '/director/ciclos', label: 'Ciclos y periodos', icon: CalendarRange },
+      { to: '/director/usuarios', label: 'Usuarios', icon: Users },
+      { to: '/director/escuela', label: 'Escuela', icon: School },
+      { to: '/director/bitacora', label: 'Bitácora', icon: History },
       account,
     ];
   }
   if (role === 'TEACHER') {
     return [{ ...home, label: 'Mis grupos', icon: UsersRound, end: false }, account];
   }
-  return [
-    { ...home, label: 'Mis hijos', icon: Heart, end: false },
-    { to: '/padres/agregar', label: 'Agregar hijo', icon: UserPlus, mobile: true },
-    account,
-  ];
+  return [{ ...home, label: 'Mis hijos', icon: Heart, end: false }, account];
 }

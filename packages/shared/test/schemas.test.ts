@@ -6,24 +6,26 @@ import {
   resetPasswordSchema,
 } from '../src/schemas/auth';
 import {
-  formatGuardianCode,
-  GUARDIAN_CODE_ALPHABET,
-  guardianCodeSchema,
-  maskedStudentName,
-  registerGuardianSchema,
-} from '../src/schemas/guardian';
+  createGuardianSchema,
+  formatUsername,
+  loginIdSchema,
+  normalizePhone,
+  phoneSchema,
+  USERNAME_REGEX,
+  usernamePrefixFor,
+} from '../src/schemas/account';
 import { FIELD_COLORS, PRIMARY_COLOR } from '../src/theme';
 
 describe('auth schemas', () => {
-  it('normalizes the email on login', () => {
-    const parsed = loginSchema.parse({ email: '  Viry@Escuela.MX ', password: 'x' });
-    expect(parsed.email).toBe('viry@escuela.mx');
+  it('normalizes the username on login', () => {
+    const parsed = loginSchema.parse({ username: '  mae26-0001 ', password: 'x' });
+    expect(parsed.username).toBe('MAE26-0001');
   });
 
-  it('rejects an invalid email with a Spanish message', () => {
-    const result = loginSchema.safeParse({ email: 'no-es-correo', password: 'x' });
+  it('asks for the username with a Spanish message', () => {
+    const result = loginSchema.safeParse({ username: '', password: 'x' });
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toBe('Escribe un correo válido');
+    expect(result.error?.issues[0]?.message).toBe('Escribe tu usuario');
   });
 
   it('requires passwords of at least 10 characters', () => {
@@ -66,37 +68,39 @@ describe('theme', () => {
   });
 });
 
-describe('guardian codes', () => {
-  it('normalizes and validates the 8-character code without ambiguous letters', () => {
-    expect(guardianCodeSchema.parse(' abcd-2345 ')).toBe('ABCD2345');
-    expect(formatGuardianCode('ABCD2345')).toBe('ABCD-2345');
-    for (const bad of ['ABCD234', 'ABCD23450', 'ABCD0345', 'ABCDO345', 'ABCD1345', 'ABCDI345']) {
-      expect(guardianCodeSchema.safeParse(bad).success).toBe(false);
-    }
-    expect(GUARDIAN_CODE_ALPHABET).not.toMatch(/[01OI]/);
+describe('usernames, phones and guardian accounts', () => {
+  it('builds usernames as type + 2-digit year + consecutive', () => {
+    expect(formatUsername(usernamePrefixFor(['TEACHER']), 2026, 1)).toBe('MAE26-0001');
+    expect(formatUsername(usernamePrefixFor(['GUARDIAN']), 2026, 153)).toBe('TUT26-0153');
+    expect(usernamePrefixFor(['TEACHER', 'DIRECTOR'])).toBe('DIR');
+    expect(usernamePrefixFor(['ADMIN', 'TEACHER'])).toBe('ADM');
+    expect(USERNAME_REGEX.test('MAE26-0001')).toBe(true);
+    expect(USERNAME_REGEX.test('MAE2026-001')).toBe(false);
   });
 
-  it('masks the student name before linking', () => {
-    expect(
-      maskedStudentName({
-        firstName: 'Edgar Mauricio',
-        lastName1: 'Aguilar',
-        lastName2: 'Contreras',
-      }),
-    ).toBe('Aguilar C. Edgar M.');
-    expect(maskedStudentName({ firstName: 'Ana', lastName1: 'Ruiz' })).toBe('Ruiz Ana');
+  it('accepts the username in any case (or an email for older accounts)', () => {
+    expect(loginIdSchema.parse(' mae26-0007 ')).toBe('MAE26-0007');
+    expect(loginIdSchema.parse(' Viry@Escuela.MX ')).toBe('viry@escuela.mx');
   });
 
-  it('requires accepting the privacy notice to register', () => {
-    const base = {
-      code: 'ABCD2345',
+  it('normalizes Mexican phones to 10 digits', () => {
+    expect(normalizePhone('+52 (312) 123-4567')).toBe('3121234567');
+    expect(phoneSchema.parse('312 123 4567')).toBe('3121234567');
+    expect(phoneSchema.safeParse('12345').success).toBe(false);
+  });
+
+  it('a guardian needs name, phone and relationship; email and address are optional', () => {
+    const parsed = createGuardianSchema.parse({
       firstName: 'Laura',
       lastName: 'Pérez',
-      email: 'laura@example.com',
-      password: 'una-contraseña-larga',
+      phone: '312-123-4567',
       relationship: 'MADRE',
-    };
-    expect(registerGuardianSchema.safeParse({ ...base, acceptPrivacy: false }).success).toBe(false);
-    expect(registerGuardianSchema.safeParse({ ...base, acceptPrivacy: true }).success).toBe(true);
+      email: '',
+    });
+    expect(parsed).toMatchObject({ phone: '3121234567', email: null, address: null });
+    expect(
+      createGuardianSchema.safeParse({ firstName: 'L', lastName: 'P', relationship: 'MADRE' })
+        .success,
+    ).toBe(false);
   });
 });

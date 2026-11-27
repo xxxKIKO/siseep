@@ -18,6 +18,13 @@ export const CheckPolicies = (...handlers: PolicyHandler[]) =>
  */
 export const Authenticated = () => CheckPolicies(() => true);
 
+export const ALLOW_TEMPORARY_PASSWORD_KEY = 'allowTemporaryPassword';
+/**
+ * The few routes an account with a temporary password may use (who am I, my abilities, change
+ * the password, log out). Everything else answers 403 PASSWORD_CHANGE_REQUIRED.
+ */
+export const AllowTemporaryPassword = () => SetMetadata(ALLOW_TEMPORARY_PASSWORD_KEY, true);
+
 /** Injects the authenticated user (set by JwtAuthGuard). */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): RequestUser => {

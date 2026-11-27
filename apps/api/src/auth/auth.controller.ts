@@ -10,19 +10,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { AuthResponse, GuardianCodePreview, User } from '@siseep/shared';
+import type { AuthResponse, User } from '@siseep/shared';
 import type { CookieOptions, Request, Response } from 'express';
-import { Authenticated, CurrentActor, CurrentUser, Public } from '../common/decorators';
+import {
+  AllowTemporaryPassword,
+  Authenticated,
+  CurrentActor,
+  CurrentUser,
+  Public,
+} from '../common/decorators';
 import type { Actor, RequestUser } from '../common/request-user';
 import { AppConfigService } from '../config/app-config.service';
-import {
-  AcceptInviteDto,
-  ForgotPasswordDto,
-  GuardianCodePreviewDto,
-  LoginDto,
-  RegisterGuardianDto,
-  ResetPasswordDto,
-} from './auth.dto';
+import { AcceptInviteDto, ForgotPasswordDto, LoginDto, ResetPasswordDto } from './auth.dto';
 import { AuthService } from './auth.service';
 import { LoginThrottlerGuard } from './login-throttler.guard';
 import type { ClientMeta } from './sessions.service';
@@ -81,6 +80,7 @@ export class AuthController {
     this.clearRefreshCookie(res);
   }
 
+  @AllowTemporaryPassword()
   @Authenticated()
   @Post('logout-all')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -94,6 +94,7 @@ export class AuthController {
     this.clearRefreshCookie(res);
   }
 
+  @AllowTemporaryPassword()
   @Authenticated()
   @Get('me')
   @ApiBearerAuth()
@@ -116,6 +117,7 @@ export class AuthController {
     return result.body;
   }
 
+  @AllowTemporaryPassword()
   @Authenticated()
   @Get('abilities')
   @ApiBearerAuth()
@@ -128,35 +130,11 @@ export class AuthController {
 
   @Public()
   @UseGuards(LoginThrottlerGuard)
-  @Post('guardian-code')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Revisa un código para padres y muestra a quién vincula' })
-  guardianCode(@Body() dto: GuardianCodePreviewDto): Promise<GuardianCodePreview> {
-    return this.auth.previewGuardianCode(dto.code);
-  }
-
-  @Public()
-  @UseGuards(LoginThrottlerGuard)
-  @Post('register-guardian')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Crea la cuenta de un padre o tutor con su código y lo vincula' })
-  async registerGuardian(
-    @Body() dto: RegisterGuardianDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponse> {
-    const result = await this.auth.registerGuardian(dto, clientMeta(req));
-    this.setRefreshCookie(res, result.refreshToken);
-    return result.body;
-  }
-
-  @Public()
-  @UseGuards(LoginThrottlerGuard)
   @Post('forgot')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Envía un enlace para restablecer la contraseña' })
   forgot(@Body() dto: ForgotPasswordDto): Promise<void> {
-    return this.auth.forgotPassword(dto.email);
+    return this.auth.forgotPassword(dto.username);
   }
 
   @Public()

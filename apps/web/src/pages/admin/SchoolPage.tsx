@@ -4,6 +4,7 @@ import { ImageUp, LoaderCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { usePortalBase } from '@/auth/ability';
 import { useSchool, useSchoolLogo, useUpdateSchool, useUploadLogo } from '@/api/catalog';
 import { usePrivacyNotice, useUpdatePrivacyNotice } from '@/api/guardian';
 import { PageHeader } from '@/components/PageHeader';
@@ -16,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { fieldProps } from '@/lib/form';
 
 export function SchoolPage() {
+  const base = usePortalBase();
   const school = useSchool();
   const logo = useSchoolLogo(Boolean(school.data?.hasLogo));
   const update = useUpdateSchool();
@@ -57,7 +59,7 @@ export function SchoolPage() {
       <PageHeader
         title="Escuela"
         description="Estos datos aparecen en las boletas."
-        back={{ to: '/admin', label: 'Administración' }}
+        back={{ to: base, label: base === '/director' ? 'Tablero' : 'Administración' }}
       />
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
         <Card>

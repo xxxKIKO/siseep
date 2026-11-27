@@ -15,7 +15,7 @@ import { AuthLayout } from './AuthLayout';
 export function ForgotPasswordPage() {
   const form = useForm({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { username: '' },
   });
   const mutation = useMutation({
     mutationFn: (values: ForgotPasswordInput) =>
@@ -38,11 +38,12 @@ export function ForgotPasswordPage() {
         <div className="flex flex-col items-center gap-3 py-2 text-center">
           <MailCheck className="size-10 text-primary" aria-hidden />
           <p className="text-sm">
-            Si <strong>{mutation.variables.email}</strong> está registrado, te enviamos un enlace
-            para elegir una nueva contraseña. El enlace vence en 1 hora.
+            Si <strong>{mutation.variables.username}</strong> tiene un correo registrado, te
+            enviamos un enlace para elegir una nueva contraseña. El enlace vence en 1 hora.
           </p>
           <p className="text-xs text-muted-foreground">
-            ¿No llegó? Revisa la carpeta de correo no deseado.
+            ¿No llegó o no registraste correo? Pide a la maestra o a la dirección una contraseña
+            temporal.
           </p>
         </div>
       </AuthLayout>
@@ -52,7 +53,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout
       title="Olvidé mi contraseña"
-      description="Escribe tu correo y te enviaremos un enlace para restablecerla."
+      description="Escribe tu usuario. Si tu cuenta tiene correo, te enviaremos un enlace para restablecerla."
       footer={backToLogin}
     >
       <form
@@ -61,14 +62,13 @@ export function ForgotPasswordPage() {
         onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
         {mutation.isError ? <Alert>{errorMessage(mutation.error)}</Alert> : null}
-        <FormField id="email" label="Correo electrónico" error={errors.email?.message}>
+        <FormField id="username" label="Usuario" error={errors.username?.message}>
           <Input
-            {...fieldProps('email', errors.email?.message)}
-            type="email"
-            inputMode="email"
+            {...fieldProps('username', errors.username?.message)}
             autoComplete="username"
-            autoCapitalize="none"
-            {...form.register('email')}
+            autoCapitalize="characters"
+            placeholder="MAE26-0001"
+            {...form.register('username')}
           />
         </FormField>
         <Button type="submit" size="lg" disabled={mutation.isPending}>

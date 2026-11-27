@@ -258,15 +258,14 @@ describe('Period closing and report cards (e2e)', () => {
       );
     });
 
-    it('close: not the teacher (school setting off), not the director without permission', async () => {
+    it('close: not the teacher (school setting off) nor the subject teacher', async () => {
       expect((await transition(viry, 'close')).status).toBe(403);
-      expect((await transition(director, 'close')).status).toBe(403);
       expect((await transition(english, 'close')).status).toBe(403);
     });
 
     let snapshot: PeriodResultsView;
-    it('admin closes: snapshot stored and equal to the Excel', async () => {
-      const res = await transition(admin, 'close');
+    it('the direction closes: snapshot stored and equal to the Excel', async () => {
+      const res = await transition(director, 'close');
       expect(res.status).toBe(200);
       expect((res.body as PeriodGroupStatusView).status).toBe('CLOSED');
       snapshot = await results();
@@ -323,33 +322,28 @@ describe('Period closing and report cards (e2e)', () => {
       expect(again.rows).toEqual(snapshot.rows);
     });
 
-    it('publish: admin or director with "Cerrar y publicar periodos"; never the teacher', async () => {
+    it('publish: admin or direction; never the teacher', async () => {
       expect((await transition(viry, 'publish')).status).toBe(403);
-      expect((await transition(director, 'publish')).status).toBe(403);
-      const grant = await as(admin).post('/permission-grants', {
-        userId: school.director.id,
-        action: 'period:update',
-        scope: { type: 'GROUP', groupId: school.group5B.id },
-        reason: 'Publicación de boletas',
-      });
-      expect(grant.status).toBe(201);
+      expect((await transition(english, 'publish')).status).toBe(403);
       const res = await transition(director, 'publish');
       expect(res.status).toBe(200);
       expect((res.body as PeriodGroupStatusView).status).toBe('PUBLISHED');
       expect((await results()).rows).toEqual(snapshot.rows);
     });
 
-    it('reopen: admin only, with a reason', async () => {
-      expect(
-        (await transition(director, 'reopen', { reason: 'Corrección de calificación' })).status,
-      ).toBe(403);
+    it('reopen: admin or direction, always with a reason; never the teacher', async () => {
       expect(
         (await transition(viry, 'reopen', { reason: 'Corrección de calificación' })).status,
       ).toBe(403);
-      expect((await transition(admin, 'reopen', {})).status).toBe(400);
+      expect(
+        (await transition(english, 'reopen', { reason: 'Corrección de calificación' })).status,
+      ).toBe(403);
+      expect((await transition(director, 'reopen', {})).status).toBe(400);
       expect((await transition(admin, 'reopen', { reason: '  ' })).status).toBe(400);
-      expect((await transition(admin, 'reopen', { reason: 'no' })).status).toBe(400);
-      const res = await transition(admin, 'reopen', { reason: 'Corrección de una calificación' });
+      expect((await transition(director, 'reopen', { reason: 'no' })).status).toBe(400);
+      const res = await transition(director, 'reopen', {
+        reason: 'Corrección de una calificación',
+      });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
         status: 'OPEN',

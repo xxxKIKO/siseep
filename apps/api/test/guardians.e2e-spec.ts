@@ -6,16 +6,16 @@ import type {
   ChildOverview,
   ChildReportCard,
   ChildView,
+  CreatedAccountView,
   GroupGuardianRow,
-  GuardianInvitationView,
   ImportPreview,
   Paginated,
   PeriodResultsView,
 } from '@siseep/shared';
 import type request from 'supertest';
-import { Invitation } from '../src/invitations/invitation.schema';
 import { findChromium } from '../src/reports/pdf.service';
 import { fixtureBuffer } from './fixture';
+import { activateGuardian, createGuardian, FAMILY_PASSWORD } from './guardian-helpers';
 import { createTestContext, type TestContext } from './helpers';
 import { type SchoolSetup, setupSchool } from './school-setup';
 
@@ -26,8 +26,11 @@ const binary = (req: request.Test) =>
     res.on('end', () => cb(null, Buffer.concat(chunks)));
   });
 
+const PHONE_A = '3121112233';
+const PHONE_B = '3124445566';
+
 // Permission tests: never delete or skip (see CLAUDE.md).
-describe('Guardian codes, guardian portal and director (e2e)', () => {
+describe('Guardian accounts, guardian portal and director (e2e)', () => {
   let ctx: TestContext;
   let school: SchoolSetup;
   let admin: string;
@@ -46,30 +49,11 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
       delete: (path: string) => auth(ctx.http().delete(`/api/v1${path}`)),
     };
   };
-  const publicPost = (path: string, body: object) => ctx.http().post(`/api/v1${path}`).send(body);
-  const newCode = async (studentId: string, token = viry) => {
-    const res = await as(token).post('/invitations/guardian', { studentId });
-    expect(res.status).toBe(201);
-    return res.body as GuardianInvitationView;
-  };
-  let emailCounter = 0;
-  const register = (code: string, extra: object = {}) => {
-    emailCounter += 1;
-    return publicPost('/auth/register-guardian', {
-      code,
-      firstName: 'Laura',
-      lastName: `Familia ${emailCounter}`,
-      email: `familia${emailCounter}@correo.mx`,
-      password: 'contraseña-de-familia',
-      relationship: 'MADRE',
-      acceptPrivacy: true,
-      ...extra,
-    });
-  };
 
-  // Two families: A (two children: N/L 1 and N/L 2) and B (N/L 3).
+  // Two families: A (N/L 1 and N/L 2, same phone) and B (N/L 3 and N/L 5).
   let guardianA: string;
   let guardianB: string;
+  let accountA: CreatedAccountView;
   const child = (listNumber: number) => students.find((s) => s.student.listNumber === listNumber)!;
 
   beforeAll(async () => {
@@ -103,131 +87,147 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
     await ctx.close();
   });
 
-  describe('guardian codes', () => {
-    it('the homeroom teacher and the admin generate codes; nobody else', async () => {
-      const code = await newCode(child(1).student.id);
-      expect(code.code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/);
-      expect(code.url).toBe(`http://localhost:5173/registro?codigo=${code.code}`);
-      const days = (new Date(code.expiresAt).getTime() - Date.now()) / 86_400_000;
-      expect(days).toBeGreaterThan(13.9);
-      expect(days).toBeLessThanOrEqual(14);
-      await newCode(child(1).student.id, admin);
-
-      for (const token of [other, english, director]) {
-        const res = await as(token).post('/invitations/guardian', {
-          studentId: child(1).student.id,
-        });
-        expect(res.status).toBe(403);
-      }
-      // The teacher of 4°A cannot even see the 5°B list; staff invitations stay admin-only.
-      expect(
-        (await as(other).get(`/groups/${school.group5B.id}/guardian-invitations`)).status,
-      ).toBe(403);
-      expect(
-        (await as(viry).post('/invitations/staff', { email: 'x@correo.mx', roles: ['TEACHER'] }))
-          .status,
-      ).toBe(403);
-      expect((await as(viry).get('/invitations')).status).toBe(403);
-    });
-
-    it('stores only the hash of the code', async () => {
-      const code = await newCode(child(2).student.id);
-      const stored = await ctx.connection
-        .model(Invitation.name)
-        .findById(code.id)
-        .lean<{ codeHash: string }>()
-        .exec();
-      expect(stored!.codeHash).toMatch(/^[a-f\d]{64}$/);
-      expect(JSON.stringify(stored)).not.toContain(code.code);
-    });
-
-    it('preview shows the partially hidden name and the group', async () => {
-      const code = await newCode(child(3).student.id);
-      const res = await publicPost('/auth/guardian-code', { code: code.code.toLowerCase() });
-      expect(res.status).toBe(200);
-      expect(res.body.groupName).toBe('5°B');
-      expect(res.body.studentName).not.toBe(child(3).student.fullName);
-      expect(res.body.studentName).toMatch(/\b[A-ZÁÉÍÓÚÑ]\./);
-    });
-  });
-
-  describe('guardian sign-up', () => {
-    it('registers family A with a code; the code cannot be used again', async () => {
-      const code = await newCode(child(1).student.id);
-      const res = await register(code.code);
-      expect(res.status).toBe(200);
-      expect(res.body.user.roles).toEqual(['GUARDIAN']);
-      expect(res.body.user.privacyAcceptedVersion).toBe(1);
-      guardianA = res.body.accessToken as string;
-
-      const again = await register(code.code);
-      expect(again.status).toBe(400);
-    });
-
-    it('rejects an expired code', async () => {
-      const code = await newCode(child(4).student.id);
-      await ctx.connection
-        .model(Invitation.name)
-        .updateOne({ _id: code.id }, { $set: { expiresAt: new Date(Date.now() - 1000) } })
-        .exec();
-      expect((await register(code.code)).status).toBe(400);
-    });
-
-    it('requires accepting the privacy notice', async () => {
-      const code = await newCode(child(4).student.id);
-      expect((await register(code.code, { acceptPrivacy: false })).status).toBe(400);
-    });
-
-    it('family A adds a second child with another code ("Agregar hijo")', async () => {
-      const code = await newCode(child(2).student.id);
-      const res = await as(guardianA).post('/me/children', {
-        code: code.code,
-        relationship: 'MADRE',
+  describe('guardian accounts', () => {
+    it('the homeroom teacher creates the account: username TUT + year + consecutive and a temporary password', async () => {
+      const res = await createGuardian(ctx, viry, child(1).student.id, {
+        phone: '312 111 2233',
+        email: 'laura@correo.mx',
       });
       expect(res.status).toBe(201);
-      expect((res.body as ChildView[]).map((c) => c.id).sort()).toEqual(
-        [child(1).student.id, child(2).student.id].sort(),
-      );
+      accountA = res.body as CreatedAccountView;
+      expect(accountA.username).toMatch(/^TUT\d{2}-\d{4}$/);
+      expect(accountA.temporaryPassword).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{2}$/);
+      expect(accountA.existing).toBe(false);
+      expect(accountA.user).toMatchObject({
+        roles: ['GUARDIAN'],
+        phone: PHONE_A,
+        address: 'Calle Falsa 123, Colima',
+        mustChangePassword: true,
+      });
     });
 
-    it('family B registers for N/L 3', async () => {
-      const code = await newCode(child(3).student.id);
-      const res = await register(code.code, { relationship: 'PADRE' });
-      expect(res.status).toBe(200);
-      guardianB = res.body.accessToken as string;
+    it('the same phone links a sibling to the same account (no new account, no password)', async () => {
+      const res = await createGuardian(ctx, viry, child(2).student.id, {
+        phone: '+52 312-111-2233',
+        firstName: 'Otro nombre',
+      });
+      expect(res.status).toBe(201);
+      const sibling = res.body as CreatedAccountView;
+      expect(sibling).toMatchObject({ existing: true, temporaryPassword: null });
+      expect(sibling.username).toBe(accountA.username);
+      expect(sibling.children!.map((c) => c.id).sort()).toEqual(
+        [child(1).student.id, child(2).student.id].sort(),
+      );
+      // Again for the same student: 409.
+      expect(
+        (await createGuardian(ctx, viry, child(2).student.id, { phone: PHONE_A })).status,
+      ).toBe(409);
+    });
+
+    it('who can create guardian accounts: homeroom teacher, direction, admin; not others', async () => {
+      for (const token of [other, english]) {
+        expect(
+          (await createGuardian(ctx, token, child(3).student.id, { phone: '3120000001' })).status,
+        ).toBe(403);
+      }
+      const byDirector = await createGuardian(ctx, director, child(3).student.id, {
+        phone: PHONE_B,
+        relationship: 'PADRE',
+        firstName: 'Mario',
+      });
+      expect(byDirector.status).toBe(201);
+      const byAdmin = await createGuardian(ctx, admin, child(5).student.id, {
+        phone: PHONE_B,
+        relationship: 'PADRE',
+      });
+      expect(byAdmin.body).toMatchObject({ existing: true });
+      guardianB = await activateGuardian(ctx, byDirector.body as CreatedAccountView);
+    });
+
+    it('validates the data: a 10-digit phone is required', async () => {
+      const bad = await createGuardian(ctx, viry, child(6).student.id, { phone: '12345' });
+      expect(bad.status).toBe(400);
     });
 
     it('a student has at most 4 guardians', async () => {
-      const target = child(5).student.id;
+      const target = child(7).student.id;
       for (let i = 0; i < 4; i++) {
-        const code = await newCode(target);
-        const res = await as(guardianB).post('/me/children', {
-          code: code.code,
-          relationship: 'TUTOR',
-        });
-        if (i === 0) expect(res.status).toBe(201);
-        else expect(res.status).toBe(409); // same guardian twice
+        const res = await createGuardian(ctx, viry, target, { phone: `31255500${10 + i}` });
+        expect(res.status).toBe(201);
       }
-      // Three more families for N/L 5 → 4 in total, then the 5th is rejected.
-      for (let i = 0; i < 3; i++) {
-        const code = await newCode(target);
-        expect((await register(code.code)).status).toBe(200);
-      }
-      expect((await as(viry).post('/invitations/guardian', { studentId: target })).status).toBe(
-        409,
-      );
+      expect((await createGuardian(ctx, viry, target, { phone: '3125550099' })).status).toBe(409);
     });
 
-    it('the teacher sees the status per student (never the codes)', async () => {
-      const res = await as(viry).get(`/groups/${school.group5B.id}/guardian-invitations`);
+    it('first sign-in: the temporary password only allows changing it (and accepting the privacy notice)', async () => {
+      const login = await ctx
+        .http()
+        .post('/api/v1/auth/login')
+        .send({ username: accountA.username.toLowerCase(), password: accountA.temporaryPassword });
+      expect(login.status).toBe(200);
+      expect(login.body.user.mustChangePassword).toBe(true);
+      const token = login.body.accessToken as string;
+      const blocked = await as(token).get('/me/children');
+      expect(blocked.status).toBe(403);
+      expect(blocked.body.code).toBe('PASSWORD_CHANGE_REQUIRED');
+      expect((await as(token).get('/auth/me')).status).toBe(200);
+
+      const noPrivacy = await as(token).post('/me/password', {
+        currentPassword: accountA.temporaryPassword,
+        newPassword: FAMILY_PASSWORD,
+      });
+      expect(noPrivacy.status).toBe(400);
+      const wrong = await as(token).post('/me/password', {
+        currentPassword: 'no-es-la-temporal',
+        newPassword: FAMILY_PASSWORD,
+        acceptPrivacy: true,
+      });
+      expect(wrong.status).toBe(400);
+      const ok = await as(token).post('/me/password', {
+        currentPassword: accountA.temporaryPassword,
+        newPassword: FAMILY_PASSWORD,
+        acceptPrivacy: true,
+      });
+      expect(ok.status).toBe(200);
+      expect(ok.body).toMatchObject({ mustChangePassword: false, privacyAcceptedVersion: 1 });
+      guardianA = token;
+      expect((await as(guardianA).get('/me/children')).status).toBe(200);
+    });
+
+    it('the teacher resets a lost password: a new temporary one, the old one stops working', async () => {
+      const otherAccount = (
+        await createGuardian(ctx, viry, child(8).student.id, { phone: '3127778899' })
+      ).body as CreatedAccountView;
+      expect(
+        (await as(other).post(`/guardians/${otherAccount.user.id}/reset-password`)).status,
+      ).toBe(403);
+      const reset = await as(viry).post(`/guardians/${otherAccount.user.id}/reset-password`);
+      expect(reset.status).toBe(200);
+      expect(reset.body.username).toBe(otherAccount.username);
+      expect(reset.body.temporaryPassword).not.toBe(otherAccount.temporaryPassword);
+      const old = await ctx
+        .http()
+        .post('/api/v1/auth/login')
+        .send({ username: otherAccount.username, password: otherAccount.temporaryPassword });
+      expect(old.status).toBe(401);
+      // Staff accounts are never reset from here.
+      expect((await as(viry).post(`/guardians/${school.viry.id}/reset-password`)).status).toBe(404);
+    });
+
+    it('the group list shows each student with their guardians (username, phone, activated)', async () => {
+      const res = await as(viry).get(`/groups/${school.group5B.id}/guardians`);
       expect(res.status).toBe(200);
       const rows = res.body as GroupGuardianRow[];
       expect(rows).toHaveLength(20);
-      expect(rows.find((r) => r.student.id === child(1).student.id)!.status).toBe('LINKED');
-      expect(rows.find((r) => r.student.id === child(4).student.id)!.status).toBe('PENDING');
-      expect(rows.find((r) => r.student.id === child(6).student.id)!.status).toBe('NONE');
-      expect(rows.find((r) => r.student.id === child(5).student.id)!.links).toHaveLength(4);
-      expect(JSON.stringify(rows)).not.toMatch(/"code"/);
+      const first = rows.find((r) => r.student.id === child(1).student.id)!;
+      expect(first.status).toBe('LINKED');
+      expect(first.links[0]!.guardian).toMatchObject({
+        username: accountA.username,
+        phone: PHONE_A,
+        activated: true,
+      });
+      expect(rows.find((r) => r.student.id === child(9).student.id)!.status).toBe('NONE');
+      expect((await as(other).get(`/groups/${school.group5B.id}/guardians`)).status).toBe(403);
+      expect((await as(director).get(`/groups/${school.group5B.id}/guardians`)).status).toBe(200);
     });
   });
 
@@ -260,6 +260,7 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
       expect((await as(guardianA).get('/me/children/xyz/activities?periodId=x')).status).toBe(404);
       // Staff cannot use the guardian portal; guardians cannot use staff endpoints.
       expect((await as(viry).get('/me/children')).status).toBe(403);
+      expect((await as(director).get('/me/children')).status).toBe(403);
       expect(
         (
           await as(guardianA).get(
@@ -374,15 +375,13 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
       120_000,
     );
 
-    it('after unlinking, the guardian gets 404 (admin only)', async () => {
-      const links = await as(admin).get(`/students/${child(2).student.id}/guardians`);
+    it('after unlinking, the guardian gets 404 (admin or direction; never the teacher)', async () => {
+      const links = await as(director).get(`/students/${child(2).student.id}/guardians`);
       expect(links.status).toBe(200);
       expect(links.body).toHaveLength(1);
       expect((await as(viry).delete(`/guardian-links/${links.body[0].id}`)).status).toBe(403);
-      expect((await as(director).get(`/students/${child(2).student.id}/guardians`)).status).toBe(
-        403,
-      );
-      expect((await as(admin).delete(`/guardian-links/${links.body[0].id}`)).status).toBe(204);
+      expect((await as(other).get(`/students/${child(2).student.id}/guardians`)).status).toBe(403);
+      expect((await as(director).delete(`/guardian-links/${links.body[0].id}`)).status).toBe(204);
       expect((await as(guardianA).get(paths(child(2).student.id)[1]!)).status).toBe(404);
       expect(((await as(guardianA).get('/me/children')).body as ChildView[]).length).toBe(1);
     });
@@ -433,7 +432,7 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
       const links = (
         (await as(director).get('/audit?entity=guardianLink')).body as Paginated<AuditLogView>
       ).items;
-      expect(links.some((l) => l.description.startsWith('Vinculó a Laura'))).toBe(true);
+      expect(links.some((l) => l.description.startsWith('Vinculó a Laura Familia'))).toBe(true);
       expect(links.some((l) => l.description.startsWith('Desvinculó a'))).toBe(true);
       const status = (
         (await as(director).get('/audit?entity=periodStatus')).body as Paginated<AuditLogView>
@@ -455,31 +454,8 @@ describe('Guardian codes, guardian portal and director (e2e)', () => {
       expect(edited.status).toBe(200);
       expect(edited.body).toMatchObject({ version: 2, pendingReview: false });
 
-      // A new version must be accepted again before adding another child.
-      const code = await newCode(child(7).student.id);
-      expect(
-        (await as(guardianB).post('/me/children', { code: code.code, relationship: 'PADRE' }))
-          .status,
-      ).toBe(400);
-      expect(
-        (
-          await as(guardianB).post('/me/children', {
-            code: code.code,
-            relationship: 'PADRE',
-            acceptPrivacy: true,
-          })
-        ).status,
-      ).toBe(201);
+      // The direction also edits it now (school settings).
+      expect((await as(director).put('/school/privacy-notice', { text })).status).toBe(200);
     });
   });
-
-  it('printable strips: a PDF with new codes for the students without guardians', async () => {
-    if (!findChromium()) return;
-    const res = await binary(
-      as(viry).post(`/groups/${school.group5B.id}/guardian-codes.pdf`).send({}),
-    );
-    expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toBe('application/pdf');
-    expect(Number(res.headers['x-codes-count'])).toBeGreaterThan(10);
-  }, 120_000);
 });

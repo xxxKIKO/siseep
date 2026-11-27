@@ -254,14 +254,10 @@ export const useUpdateUser = () =>
     },
   );
 
-export const useUserAction = (action: 'disable' | 'enable' | 'reset-password') =>
-  useAction((id: string) => api.post<User | undefined>(`/users/${id}/${action}`), {
+export const useUserAction = (action: 'disable' | 'enable') =>
+  useAction((id: string) => api.post<User>(`/users/${id}/${action}`), {
     success:
-      action === 'disable'
-        ? 'Cuenta desactivada y sesiones cerradas.'
-        : action === 'enable'
-          ? 'Cuenta reactivada.'
-          : 'Le enviamos un correo para cambiar su contraseña.',
+      action === 'disable' ? 'Cuenta desactivada y sesiones cerradas.' : 'Cuenta reactivada.',
     invalidate: [['users']],
   });
 

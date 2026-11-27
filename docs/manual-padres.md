@@ -4,19 +4,16 @@
 
 ## Crear tu cuenta (una sola vez)
 
-1. La maestra te da un **código de 8 letras y números** (en papel o por WhatsApp).
-2. En tu celular abre la dirección que viene con el código y toca **Regístrate**.
-3. Escribe el código y revisa el nombre que aparece: "Vas a vincularte con…". Si no es tu hijo o hija, no continúes y avisa a la maestra.
-4. Escribe tu nombre, tu correo, una contraseña (al menos 10 caracteres) y tu parentesco.
-5. Lee y acepta el **aviso de privacidad** y toca **Crear cuenta y vincular**.
-6. Para tenerla como app: **Mi cuenta → Instalar en tu celular**.
-
-El código sirve **una sola vez** y vence en **14 días**. Si se venció, pide otro a la maestra.
+1. La maestra te da tu **usuario** (por ejemplo TUT26-0015) y una **contraseña temporal** (en papel o por WhatsApp).
+2. En tu celular abre la dirección que te dieron y escribe tu usuario y la contraseña temporal.
+3. Elige tu propia contraseña (al menos 10 caracteres), lee y acepta el **aviso de privacidad** y toca **Guardar y entrar**.
+4. Revisa que aparezca tu hijo o hija. Si no es, avisa a la maestra.
+5. Para tenerla como app: **Mi cuenta → Instalar en tu celular**. Ahí también puedes poner tu foto.
 
 ## ¿Tienes más de un hijo o hija en la escuela?
 
-1. Pide a cada maestra su código.
-2. Entra a tu cuenta y toca **Agregar hijo**. Escribe el código y confirma el nombre.
+1. Dale a cada maestra el **mismo teléfono**: con él, todos tus hijos quedan en tu misma cuenta.
+2. No necesitas otro usuario: entra con el mismo y elige al hijo en **Mis hijos**.
 
 ## Qué puedes ver
 
@@ -27,4 +24,4 @@ El código sirve **una sola vez** y vence en **14 días**. Si se venció, pide o
 
 Las calificaciones aparecen un día después de capturarse, para que la maestra pueda corregir errores. Solo ves a tus hijos: nadie más ve sus datos.
 
-¿Olvidaste tu contraseña? En la pantalla de entrada toca **Olvidé mi contraseña**.
+¿Olvidaste tu contraseña? Pide a la maestra una contraseña temporal nueva.

@@ -34,15 +34,16 @@ export class FilesService {
     return new mongo.GridFSBucket(this.connection.db!, { bucketName: BUCKET });
   }
 
-  /** Validates (PNG/JPEG, max 1 MB) and stores a logo. Returns its file id. */
+  /** Validates (PNG/JPEG, max 1 MB) and stores a logo or profile photo. Returns its file id. */
   async storeLogo(
     file: { buffer: Buffer; size: number } | undefined,
     metadata: Record<string, unknown>,
+    label = 'El logo',
   ): Promise<Types.ObjectId> {
     if (!file) throw Errors.invalidFile('Elige una imagen PNG o JPG.');
-    if (file.size > LOGO_MAX_BYTES) throw Errors.invalidFile('El logo debe pesar máximo 1 MB.');
+    if (file.size > LOGO_MAX_BYTES) throw Errors.invalidFile(`${label} debe pesar máximo 1 MB.`);
     const contentType = detectImageType(file.buffer);
-    if (!contentType) throw Errors.invalidFile('El logo debe ser una imagen PNG o JPG.');
+    if (!contentType) throw Errors.invalidFile(`${label} debe ser una imagen PNG o JPG.`);
     const fileId = new Types.ObjectId();
     await new Promise<void>((resolve, reject) => {
       const upload = this.bucket().openUploadStreamWithId(fileId, `logo-${fileId.toString()}`, {

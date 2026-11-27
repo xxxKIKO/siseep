@@ -39,6 +39,8 @@ export interface TestContext {
 export interface TestUser {
   id: string;
   email: string;
+  /** Login: MAE26-0001… (generated). */
+  username: string;
   password: string;
   schoolId: string;
 }
@@ -84,15 +86,21 @@ export async function createTestContext(): Promise<TestContext> {
         lastName: `Prueba ${userCounter}`,
         roles,
       });
-      return { id: user._id.toString(), email, password, schoolId: school._id.toString() };
+      return {
+        id: user._id.toString(),
+        email,
+        username: user.username!,
+        password,
+        schoolId: school._id.toString(),
+      };
     },
     async token(user) {
       const cached = tokens.get(user.id);
       if (cached) return cached;
       const res = await request(app.getHttpServer())
         .post('/api/v1/auth/login')
-        .send({ email: user.email, password: user.password });
-      if (res.status !== 200) throw new Error(`login failed for ${user.email}: ${res.status}`);
+        .send({ username: user.username, password: user.password });
+      if (res.status !== 200) throw new Error(`login failed for ${user.username}: ${res.status}`);
       tokens.set(user.id, res.body.accessToken as string);
       return res.body.accessToken as string;
     },

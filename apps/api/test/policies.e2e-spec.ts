@@ -18,7 +18,7 @@ describe('Authorization (e2e)', () => {
     const res = await ctx
       .http()
       .post('/api/v1/auth/login')
-      .send({ email: user.email, password: DEFAULT_PASSWORD });
+      .send({ username: user.username, password: DEFAULT_PASSWORD });
     expect(res.status).toBe(200);
     return res.body.accessToken as string;
   }

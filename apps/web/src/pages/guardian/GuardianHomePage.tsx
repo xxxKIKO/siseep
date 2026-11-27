@@ -1,9 +1,8 @@
 import { RELATIONSHIP_LABELS } from '@siseep/shared';
-import { ChevronRight, LoaderCircle, UserPlus } from 'lucide-react';
+import { ChevronRight, LoaderCircle } from 'lucide-react';
 import { Link, Navigate } from 'react-router';
 import { useChildren } from '@/api/guardian';
 import { useAuth } from '@/auth/auth-context';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 /** /padres — one card per child; with a single child it opens it directly. */
@@ -61,11 +60,9 @@ export function GuardianHomePage() {
           ))}
         </ul>
       ) : null}
-      <Button variant="outline" className="self-start" asChild>
-        <Link to="/padres/agregar">
-          <UserPlus aria-hidden /> Agregar hijo(a)
-        </Link>
-      </Button>
+      <p className="text-sm text-muted-foreground">
+        ¿Te falta un hijo o hija? Pide a su maestra que lo agregue con tu mismo teléfono.
+      </p>
     </div>
   );
 }

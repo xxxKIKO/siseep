@@ -4,9 +4,9 @@
 
 ## Entrar por primera vez
 
-1. Abre el correo de invitación y toca el enlace. Escribe tu nombre y una contraseña de al menos 10 caracteres.
+1. La dirección te da tu **usuario** (por ejemplo MAE26-0003) y una **contraseña temporal**. Entra y elige tu propia contraseña (al menos 10 caracteres).
 2. En tu celular, abre **Mi cuenta → Instalar en tu celular** para tenerla como app.
-3. Si das boletas, sube tu logo en **Mi cuenta → Logo para las boletas** (PNG o JPG, máximo 1 MB).
+3. En **Mi cuenta** completa tu perfil (correo, teléfono, foto) y, si das boletas, sube tu logo.
 
 ## Calificar una actividad
 
@@ -36,7 +36,8 @@
 ## Padres de familia
 
 1. En tu grupo toca **Padres de familia**.
-2. **Generar código** crea un código por alumno: compártelo por **WhatsApp** o cópialo. Sirve una vez y vence en 14 días.
-3. **Imprimir códigos** genera tiras para recortar con el código y los pasos para la familia.
+2. En el alumno toca **Agregar padre o tutor**: nombre, teléfono celular, parentesco y domicilio.
+3. Entrégale su **usuario** (TUT26-…) y **contraseña temporal** por WhatsApp o impresos. Si el teléfono ya estaba registrado con un hermano, se agrega a la misma cuenta.
+4. ¿La perdió? Toca **Nueva contraseña** junto a su nombre.
 
 ¿Dudas? Pregunta a la dirección. Nunca compartas tu contraseña.

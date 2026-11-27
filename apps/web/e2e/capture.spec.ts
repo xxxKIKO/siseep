@@ -27,7 +27,7 @@ const VALUES = [
 
 async function login(page: Page) {
   await page.goto('/iniciar-sesion');
-  await page.getByLabel('Correo electrónico').fill(E2E.teacher.email);
+  await page.getByLabel('Usuario').fill(E2E.teacher.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(E2E.teacher.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page).toHaveURL(/\/maestro$/);

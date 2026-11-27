@@ -12,6 +12,7 @@ import {
   useStudents,
   useUsers,
 } from '@/api/catalog';
+import { useCan, usePortalBase } from '@/auth/ability';
 import { PageHeader } from '@/components/PageHeader';
 import { RosterList } from '@/components/RosterList';
 import { Badge } from '@/components/ui/badge';
@@ -24,10 +25,14 @@ import { Select } from '@/components/ui/select';
 import { SUBJECT_LABELS } from '@/lib/labels';
 
 export function GroupDetailPage() {
+  const base = usePortalBase();
   const { groupId = '' } = useParams();
   const group = useGroup(groupId);
   const roster = useRoster(groupId);
   const [enrolling, setEnrolling] = useState(false);
+  // The direction assigns teachers; enrolling students stays with the admin.
+  const { can } = useCan();
+  const canEnroll = can('create', 'Enrollment', { groupId });
 
   if (group.isLoading)
     return (
@@ -49,11 +54,13 @@ export function GroupDetailPage() {
       <PageHeader
         title={`Grupo ${g.name}`}
         description={`Ciclo ${g.schoolYearName}${g.currentPeriod ? ` · ${g.currentPeriod.name}` : ''} · ${g.studentCount} alumnos`}
-        back={{ to: '/admin/grupos', label: 'Grupos' }}
+        back={{ to: `${base}/grupos`, label: 'Grupos' }}
         actions={
-          <Button onClick={() => setEnrolling(true)}>
-            <UserPlus aria-hidden /> Inscribir alumno
-          </Button>
+          canEnroll ? (
+            <Button onClick={() => setEnrolling(true)}>
+              <UserPlus aria-hidden /> Inscribir alumno
+            </Button>
+          ) : null
         }
       />
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">

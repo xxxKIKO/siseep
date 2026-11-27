@@ -6,7 +6,6 @@ import type { Connection } from 'mongoose';
 import { MongoThrottlerStorage } from './mongo-throttler.storage';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigService } from '../config/app-config.service';
-import { GuardiansModule } from '../guardians/guardians.module';
 import { InvitationsModule } from '../invitations/invitations.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
@@ -49,7 +48,6 @@ import { SessionsService } from './sessions.service';
     }),
     UsersModule,
     InvitationsModule,
-    GuardiansModule,
   ],
   controllers: [AuthController],
   providers: [

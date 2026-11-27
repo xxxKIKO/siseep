@@ -9,10 +9,17 @@ export const userStatusSchema = z.enum(USER_STATUSES);
 export const userSchema = z.object({
   id: objectIdSchema,
   schoolId: objectIdSchema,
-  email: emailSchema,
+  /** Login: type + year + consecutive ("MAE26-0001"). */
+  username: z.string(),
+  email: emailSchema.nullable(),
   firstName: z.string(),
   lastName: z.string(),
-  phone: z.string().optional(),
+  phone: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  /** Has a profile photo (GET /me/photo). */
+  hasPhoto: z.boolean().optional(),
+  /** Created with a temporary password: must choose their own before anything else. */
+  mustChangePassword: z.boolean().optional(),
   roles: z.array(roleSchema).min(1),
   status: userStatusSchema,
   lastLoginAt: z.string().nullable().optional(),

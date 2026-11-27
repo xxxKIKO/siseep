@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import type { z } from 'zod';
+import { usePortalBase } from '@/auth/ability';
 import { useCreateGroup, useGroups, useSchoolYears, useUsers } from '@/api/catalog';
 import { PageHeader } from '@/components/PageHeader';
 import { ResponsiveList } from '@/components/ResponsiveList';
@@ -17,7 +18,12 @@ import { Select } from '@/components/ui/select';
 import { fieldProps } from '@/lib/form';
 import { SUBJECT_LABELS } from '@/lib/labels';
 
+/** Admin: the group's configuration. Direction: its academic view (with a link to configure). */
+const groupHref = (base: string, id: string) =>
+  base === '/director' ? `${base}/grupos/${id}/configurar` : `${base}/grupos/${id}`;
+
 export function GroupsPage() {
+  const base = usePortalBase();
   const groups = useGroups();
   const [creating, setCreating] = useState(false);
 
@@ -31,7 +37,7 @@ export function GroupsPage() {
     <div>
       <PageHeader
         title="Grupos"
-        back={{ to: '/admin', label: 'Administración' }}
+        back={{ to: base, label: base === '/director' ? 'Tablero' : 'Administración' }}
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus aria-hidden /> Nuevo grupo
@@ -59,13 +65,13 @@ export function GroupsPage() {
             className: 'text-right',
             cell: (g) => (
               <Button variant="ghost" size="sm" asChild>
-                <Link to={`/admin/grupos/${g.id}`}>Abrir</Link>
+                <Link to={groupHref(base, g.id)}>Abrir</Link>
               </Button>
             ),
           },
         ]}
         card={(g) => (
-          <Link to={`/admin/grupos/${g.id}`} className="flex items-center justify-between gap-3">
+          <Link to={groupHref(base, g.id)} className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-lg font-semibold">
                 {g.name} <Badge>{g.schoolYearName}</Badge>

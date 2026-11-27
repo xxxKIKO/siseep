@@ -18,6 +18,7 @@ import {
   useUpdatePeriod,
   useUpdateSchoolYear,
 } from '@/api/catalog';
+import { usePortalBase } from '@/auth/ability';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import { PERIOD_STATUS_LABELS } from '@/lib/labels';
 const shortDate = (value: string) => formatDate(`${value}T12:00:00Z`, "d 'de' MMM yyyy");
 
 export function SchoolYearsPage() {
+  const base = usePortalBase();
   const years = useSchoolYears();
   const periods = usePeriods();
   const [creatingYear, setCreatingYear] = useState(false);
@@ -41,7 +43,7 @@ export function SchoolYearsPage() {
       <PageHeader
         title="Ciclos y periodos"
         description="Cada ciclo tiene sus periodos y sus reglas de cálculo."
-        back={{ to: '/admin', label: 'Administración' }}
+        back={{ to: base, label: base === '/director' ? 'Tablero' : 'Administración' }}
         actions={
           <Button onClick={() => setCreatingYear(true)}>
             <Plus aria-hidden /> Nuevo ciclo
@@ -73,6 +75,7 @@ export function SchoolYearsPage() {
 }
 
 function YearCard({ year, periods }: { year: SchoolYearView; periods: PeriodView[] }) {
+  const base = usePortalBase();
   const updateYear = useUpdateSchoolYear();
   const [periodDialog, setPeriodDialog] = useState<PeriodView | 'new' | null>(null);
   const nextNumber = [1, 2, 3].find((n) => !periods.some((p) => p.number === n));
@@ -100,7 +103,7 @@ function YearCard({ year, periods }: { year: SchoolYearView; periods: PeriodView
             </Button>
           ) : null}
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/admin/ciclos/${year.id}/reglas`}>
+            <Link to={`${base}/ciclos/${year.id}/reglas`}>
               <Scale aria-hidden /> Reglas de cálculo
             </Link>
           </Button>

@@ -1,15 +1,17 @@
 import { z } from 'zod';
 import { STAFF_ROLES } from '../enums';
 import { emailSchema, passwordSchema, personNameSchema } from './common';
+import { loginIdSchema } from './account';
 import { userSchema } from './user';
 
 export const loginSchema = z.object({
-  email: emailSchema,
+  /** Username ("MAE26-0001"); older accounts may still use their email. */
+  username: loginIdSchema,
   password: z.string().min(1, { message: 'Escribe tu contraseña' }).max(128),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const forgotPasswordSchema = z.object({ email: emailSchema });
+export const forgotPasswordSchema = z.object({ username: loginIdSchema });
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z.object({

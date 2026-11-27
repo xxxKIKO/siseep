@@ -85,7 +85,7 @@ export default async function globalSetup(): Promise<void> {
   const login = await fetch(`${API}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(E2E.admin),
+    body: JSON.stringify({ username: E2E.admin.email, password: E2E.admin.password }),
   });
   const { accessToken: token } = (await login.json()) as { accessToken: string };
 

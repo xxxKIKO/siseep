@@ -27,19 +27,25 @@ describe('Auth (e2e)', () => {
       );
   }
 
-  async function login(email: string, password = DEFAULT_PASSWORD) {
-    return ctx.http().post('/api/v1/auth/login').send({ email, password });
+  async function login(username: string, password = DEFAULT_PASSWORD) {
+    return ctx.http().post('/api/v1/auth/login').send({ username, password });
   }
 
   describe('POST /auth/login', () => {
     it('returns an access token and sets a secure httpOnly refresh cookie', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const res = await login(user.email.toUpperCase());
+      const res = await login(` ${user.username.toLowerCase()} `);
 
       expect(res.status).toBe(200);
       expect(res.body.accessToken).toEqual(expect.any(String));
       expect(res.body.expiresIn).toBe(900);
-      expect(res.body.user).toMatchObject({ id: user.id, email: user.email, roles: ['TEACHER'] });
+      expect(res.body.user).toMatchObject({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        roles: ['TEACHER'],
+      });
+      expect(user.username).toMatch(/^MAE\d{2}-\d{4}$/);
       expect(res.body.user.passwordHash).toBeUndefined();
 
       const cookie = rawSetCookie(res);
@@ -53,7 +59,7 @@ describe('Auth (e2e)', () => {
 
     it('rejects a wrong password with a Spanish error', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const res = await login(user.email, 'contraseña-incorrecta');
+      const res = await login(user.username, 'contraseña-incorrecta');
 
       expect(res.status).toBe(401);
       expect(res.body).toEqual({
@@ -71,34 +77,34 @@ describe('Auth (e2e)', () => {
     });
 
     it('returns VALIDATION_ERROR with details for an invalid body', async () => {
-      const res = await ctx.http().post('/api/v1/auth/login').send({ email: 'no-es-correo' });
+      const res = await ctx.http().post('/api/v1/auth/login').send({ username: '' });
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
       expect(res.body.details).toEqual(
-        expect.arrayContaining([expect.objectContaining({ path: 'email' })]),
+        expect.arrayContaining([expect.objectContaining({ path: 'username' })]),
       );
     });
 
     it('blocks the 6th attempt in a minute for the same IP and email', async () => {
       const user = await ctx.createUser(['TEACHER']);
       for (let attempt = 1; attempt <= 5; attempt += 1) {
-        const res = await login(user.email, 'contraseña-incorrecta');
+        const res = await login(user.username, 'contraseña-incorrecta');
         expect(res.status).toBe(401);
       }
-      const blocked = await login(user.email, DEFAULT_PASSWORD);
+      const blocked = await login(user.username, DEFAULT_PASSWORD);
       expect(blocked.status).toBe(429);
       expect(blocked.body.code).toBe('TOO_MANY_REQUESTS');
 
       // Another email from the same IP is not affected.
       const other = await ctx.createUser(['TEACHER']);
-      expect((await login(other.email)).status).toBe(200);
+      expect((await login(other.username)).status).toBe(200);
     });
   });
 
   describe('GET /auth/me', () => {
     it('returns the current user with a valid token', async () => {
       const user = await ctx.createUser(['DIRECTOR', 'TEACHER']);
-      const { body } = await login(user.email);
+      const { body } = await login(user.username);
       const res = await ctx
         .http()
         .get('/api/v1/auth/me')
@@ -123,7 +129,7 @@ describe('Auth (e2e)', () => {
   describe('POST /auth/refresh', () => {
     it('rotates the refresh token on every use', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const first = refreshCookieFrom(await login(user.email));
+      const first = refreshCookieFrom(await login(user.username));
 
       const res = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', first!);
       expect(res.status).toBe(200);
@@ -139,9 +145,9 @@ describe('Auth (e2e)', () => {
 
     it('revokes every session of the user when an old refresh token is reused', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const loginA = await login(user.email);
+      const loginA = await login(user.username);
       const oldCookie = refreshCookieFrom(loginA)!;
-      const otherDevice = refreshCookieFrom(await login(user.email))!;
+      const otherDevice = refreshCookieFrom(await login(user.username))!;
 
       const rotated = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', oldCookie);
       const newCookie = refreshCookieFrom(rotated)!;
@@ -168,7 +174,7 @@ describe('Auth (e2e)', () => {
 
     it('a lost refresh response does not log the user out (reuse grace period)', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const first = refreshCookieFrom(await login(user.email))!;
+      const first = refreshCookieFrom(await login(user.username))!;
 
       // The server rotates, but the browser never receives the new cookie (tab reloaded).
       const lost = await ctx.http().post('/api/v1/auth/refresh').set('Cookie', first);
@@ -202,7 +208,7 @@ describe('Auth (e2e)', () => {
   describe('logout', () => {
     it('POST /auth/logout revokes this session and clears the cookie', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const res = await login(user.email);
+      const res = await login(user.username);
       const cookie = refreshCookieFrom(res)!;
       const access = res.body.accessToken as string;
 
@@ -220,8 +226,8 @@ describe('Auth (e2e)', () => {
 
     it('POST /auth/logout-all revokes every device', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const phone = await login(user.email);
-      const laptop = await login(user.email);
+      const phone = await login(user.username);
+      const laptop = await login(user.username);
 
       const out = await ctx
         .http()
@@ -246,9 +252,9 @@ describe('Auth (e2e)', () => {
   describe('password reset', () => {
     it('emails a 1-hour link, changes the password and closes other sessions', async () => {
       const user = await ctx.createUser(['TEACHER']);
-      const oldSession = refreshCookieFrom(await login(user.email))!;
+      const oldSession = refreshCookieFrom(await login(user.username))!;
 
-      const forgot = await ctx.http().post('/api/v1/auth/forgot').send({ email: user.email });
+      const forgot = await ctx.http().post('/api/v1/auth/forgot').send({ username: user.username });
       expect(forgot.status).toBe(204);
       const mail = ctx.mail.lastTo(user.email);
       expect(mail?.text).toContain('vence en 60 minutos');
@@ -261,7 +267,7 @@ describe('Auth (e2e)', () => {
         .send({ token, password: newPassword });
       expect(reset.status).toBe(204);
 
-      expect((await login(user.email, newPassword)).status).toBe(200);
+      expect((await login(user.username, newPassword)).status).toBe(200);
       expect((await ctx.http().post('/api/v1/auth/refresh').set('Cookie', oldSession)).status).toBe(
         401,
       );
@@ -276,7 +282,7 @@ describe('Auth (e2e)', () => {
 
     it('answers 204 for unknown emails without sending anything', async () => {
       const before = ctx.mail.sent.length;
-      const res = await ctx.http().post('/api/v1/auth/forgot').send({ email: 'nadie@prueba.mx' });
+      const res = await ctx.http().post('/api/v1/auth/forgot').send({ username: 'MAE26-9999' });
       expect(res.status).toBe(204);
       expect(ctx.mail.sent.length).toBe(before);
     });
@@ -294,7 +300,7 @@ describe('Auth (e2e)', () => {
   describe('staff invitations', () => {
     it('lets an invited person create their account once', async () => {
       const admin = await ctx.createUser(['ADMIN']);
-      const { body: auth } = await login(admin.email);
+      const { body: auth } = await login(admin.username);
 
       const invite = await ctx
         .http()
@@ -335,7 +341,7 @@ describe('Auth (e2e)', () => {
     it('rejects an invitation for an email that already has an account', async () => {
       const admin = await ctx.createUser(['ADMIN']);
       const existing = await ctx.createUser(['TEACHER']);
-      const { body: auth } = await login(admin.email);
+      const { body: auth } = await login(admin.username);
       const res = await ctx
         .http()
         .post('/api/v1/invitations/staff')
@@ -349,7 +355,7 @@ describe('Auth (e2e)', () => {
   describe('errors and health', () => {
     it('returns the standard error shape for unknown routes', async () => {
       const user = await ctx.createUser(['ADMIN']);
-      const { body } = await login(user.email);
+      const { body } = await login(user.username);
       const res = await ctx
         .http()
         .get('/api/v1/no-existe')
@@ -385,7 +391,7 @@ describe('Login attempts are counted in MongoDB (shared by every API instance)',
         ctx
           .http()
           .post('/api/v1/auth/login')
-          .send({ email: user.email, password: 'mala-contraseña-1' });
+          .send({ username: user.username, password: 'mala-contraseña-1' });
       const statuses: number[] = [];
       for (let i = 0; i < 6; i++) statuses.push((await attempt(i % 2 ? second : first)).status);
       expect(statuses.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);

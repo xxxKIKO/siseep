@@ -4,5 +4,5 @@ export { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage';
 export { LoginPage } from '@/pages/auth/LoginPage';
 export { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 export { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
-export { GuardianSignUpPage } from '@/pages/public/GuardianSignUpPage';
+export { ChangePasswordPage } from '@/pages/auth/ChangePasswordPage';
 export { PrivacyPage } from '@/pages/public/PrivacyPage';

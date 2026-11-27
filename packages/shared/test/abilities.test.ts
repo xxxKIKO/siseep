@@ -30,11 +30,32 @@ describe('defineAbilityFor', () => {
     expect(ability.can('delete', 'Grade')).toBe(true);
   });
 
-  it.each([teacher, director, guardian])('denies admin-only actions to %o', (user) => {
+  it.each([teacher, guardian])('denies admin-only actions to %o', (user) => {
     const ability = defineAbilityFor(user);
     expect(ability.can('create', 'Invitation')).toBe(false);
     expect(ability.can('manage', 'User')).toBe(false);
     expect(ability.can('update', 'Period')).toBe(false);
+  });
+
+  it('the director runs the school (periods, groups, accounts) but is not an admin', () => {
+    const ability = defineAbilityFor(director);
+    const own = { schoolId: SCHOOL, groupId: GROUP_A };
+    expect(ability.can('update', subject('Period', { ...own }))).toBe(true);
+    expect(ability.can('create', subject('Group', { schoolId: SCHOOL }))).toBe(true);
+    expect(ability.can('create', subject('User', { schoolId: SCHOOL }))).toBe(true);
+    expect(ability.can('create', subject('GuardianLink', { ...own }))).toBe(true);
+    // Still admin-only: deleting accounts, grants, grading rules, students, imports.
+    expect(ability.can('manage', 'User')).toBe(false);
+    expect(ability.can('delete', subject('User', { schoolId: SCHOOL }))).toBe(false);
+    expect(ability.can('create', subject('PermissionGrant', { schoolId: SCHOOL }))).toBe(false);
+    expect(ability.can('update', subject('GradingScheme', { schoolId: SCHOOL }))).toBe(false);
+    expect(ability.can('create', subject('Student', { schoolId: SCHOOL }))).toBe(false);
+    expect(ability.can('create', subject('Import', { schoolId: SCHOOL }))).toBe(false);
+    expect(ability.can('create', 'Invitation')).toBe(false);
+    // Another school: nothing.
+    expect(ability.can('update', subject('Period', { schoolId: 'ffffffffffffffffffffffff' }))).toBe(
+      false,
+    );
   });
 
   it('lets every user read only their own profile', () => {

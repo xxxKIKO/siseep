@@ -1,44 +1,63 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  createStaffInvitationSchema,
+  type CreatedAccountView,
+  type CreateStaffInput,
+  createStaffSchema,
+  formatPhone,
   ROLE_LABELS,
   ROLES,
   type Role,
   STAFF_ROLES,
+  type TemporaryPasswordView,
   type User,
 } from '@siseep/shared';
-import { KeyRound, LoaderCircle, MailPlus, Power, ShieldCheck } from 'lucide-react';
+import { KeyRound, LoaderCircle, Power, ShieldCheck, UserPlus } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import type { z } from 'zod';
+import { useCreateStaff, useResetUserPassword } from '@/api/account';
+import { useUpdateUser, useUserAction, useUsers } from '@/api/catalog';
+import { usePortalBase } from '@/auth/ability';
 import { useAuth } from '@/auth/auth-context';
-import {
-  useInviteStaff,
-  usePendingInvitations,
-  useUpdateUser,
-  useUserAction,
-  useUsers,
-} from '@/api/catalog';
+import { CredentialsCard } from '@/components/CredentialsCard';
 import { PageHeader } from '@/components/PageHeader';
 import { ResponsiveList } from '@/components/ResponsiveList';
+import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { errorMessage } from '@/lib/api-client';
 import { formatDate } from '@/lib/dates';
 import { fieldProps } from '@/lib/form';
 import { USER_STATUS_LABELS } from '@/lib/labels';
 
 const fullName = (u: User) => `${u.firstName} ${u.lastName}`.trim();
+/** The direction manages teachers (and guardians from "Padres de familia"); admins everything. */
+const DIRECTOR_ROLES: Role[] = ['TEACHER'];
 
+type Credentials = {
+  name: string;
+  username: string;
+  temporaryPassword: string;
+  phone?: string | null;
+};
+
+/**
+ * /admin/usuarios and /director/usuarios: accounts of the school. New accounts get a username
+ * (MAE26-0001…) and a temporary password that the person changes at the first sign-in.
+ */
 export function UsersPage() {
+  const base = usePortalBase();
+  const { user: me } = useAuth();
+  const isAdmin = me?.roles.includes('ADMIN') ?? false;
   const [q, setQ] = useState('');
   const users = useUsers({ q: useDeferredValue(q) });
-  const invitations = usePendingInvitations();
-  const [inviting, setInviting] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<User | null>(null);
+  const [credentials, setCredentials] = useState<Credentials | null>(null);
+  const manageable = (u: User) =>
+    isAdmin || u.roles.every((r) => r === 'TEACHER' || r === 'GUARDIAN');
 
   const roles = (u: User) => (
     <span className="flex flex-wrap gap-1">
@@ -50,27 +69,36 @@ export function UsersPage() {
     </span>
   );
   const status = (u: User) => (
-    <Badge tone={u.status === 'ACTIVE' ? 'success' : 'danger'}>
-      {USER_STATUS_LABELS[u.status]}
-    </Badge>
+    <span className="flex flex-wrap gap-1">
+      <Badge tone={u.status === 'ACTIVE' ? 'success' : 'danger'}>
+        {USER_STATUS_LABELS[u.status]}
+      </Badge>
+      {u.mustChangePassword ? <Badge tone="warning">Aún no entra</Badge> : null}
+    </span>
   );
+  const contact = (u: User) =>
+    [u.email, u.phone ? formatPhone(u.phone) : null].filter(Boolean).join(' · ');
 
   return (
     <div>
       <PageHeader
         title="Usuarios"
-        description="No hay registro abierto: el personal entra por invitación."
-        back={{ to: '/admin', label: 'Administración' }}
+        description={
+          isAdmin
+            ? 'Cada persona entra con su usuario (MAE26-0001…) y una contraseña temporal que cambia al entrar.'
+            : 'Agrega o desactiva maestros. Asígnales grupo desde Grupos → Maestros del grupo.'
+        }
+        back={{ to: base, label: base === '/director' ? 'Tablero' : 'Administración' }}
         actions={
-          <Button onClick={() => setInviting(true)}>
-            <MailPlus aria-hidden /> Invitar personal
+          <Button onClick={() => setCreating(true)}>
+            <UserPlus aria-hidden /> {isAdmin ? 'Nueva cuenta' : 'Agregar maestro(a)'}
           </Button>
         }
       />
       <Input
         type="search"
         aria-label="Buscar persona"
-        placeholder="Buscar por nombre o correo"
+        placeholder="Buscar por nombre, usuario o correo"
         className="mb-4"
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -87,7 +115,8 @@ export function UsersPage() {
             cell: (u) => (
               <span>
                 <span className="block font-medium">{fullName(u)}</span>
-                <span className="text-xs text-muted-foreground">{u.email}</span>
+                <span className="block font-mono text-xs text-primary">{u.username}</span>
+                <span className="text-xs text-muted-foreground">{contact(u)}</span>
               </span>
             ),
           },
@@ -100,23 +129,26 @@ export function UsersPage() {
           {
             header: 'Acciones',
             className: 'text-right',
-            cell: (u) => (
-              <Button variant="ghost" size="sm" onClick={() => setSelected(u)}>
-                Administrar
-              </Button>
-            ),
+            cell: (u) =>
+              manageable(u) ? (
+                <Button variant="ghost" size="sm" onClick={() => setSelected(u)}>
+                  Administrar
+                </Button>
+              ) : null,
           },
         ]}
         card={(u) => (
           <button
             type="button"
-            className="flex w-full flex-col gap-2 text-left"
+            className="flex w-full flex-col gap-2 text-left disabled:opacity-100"
+            disabled={!manageable(u)}
             onClick={() => setSelected(u)}
           >
             <span className="flex items-start justify-between gap-2">
               <span className="min-w-0">
                 <span className="block truncate font-medium">{fullName(u)}</span>
-                <span className="block truncate text-xs text-muted-foreground">{u.email}</span>
+                <span className="block font-mono text-xs text-primary">{u.username}</span>
+                <span className="block truncate text-xs text-muted-foreground">{contact(u)}</span>
               </span>
               {status(u)}
             </span>
@@ -125,28 +157,46 @@ export function UsersPage() {
         )}
       />
 
-      {invitations.data?.length ? (
-        <Card className="mt-5 p-4">
-          <h2 className="mb-2 font-semibold">Invitaciones pendientes</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {invitations.data.map((i) => (
-              <li key={i.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="truncate">{i.email}</span>
-                <span className="text-xs text-muted-foreground">
-                  {i.roles.map((r) => ROLE_LABELS[r as Role]).join(', ')} · vence{' '}
-                  {formatDate(i.expiresAt, "d 'de' MMM")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-
-      <Dialog open={inviting} onOpenChange={setInviting}>
-        {inviting ? <InviteDialog onDone={() => setInviting(false)} /> : null}
+      <Dialog open={creating} onOpenChange={setCreating}>
+        {creating ? (
+          <CreateAccountDialog
+            allowedRoles={isAdmin ? [...STAFF_ROLES] : DIRECTOR_ROLES}
+            onDone={(account) => {
+              setCreating(false);
+              setCredentials({
+                name: fullName(account.user),
+                username: account.username,
+                temporaryPassword: account.temporaryPassword!,
+                phone: account.user.phone,
+              });
+            }}
+          />
+        ) : null}
       </Dialog>
       <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
-        {selected ? <ManageUserDialog user={selected} onDone={() => setSelected(null)} /> : null}
+        {selected ? (
+          <ManageUserDialog
+            user={selected}
+            allowedRoles={isAdmin ? [...ROLES] : DIRECTOR_ROLES}
+            onDone={() => setSelected(null)}
+            onReset={(view) => {
+              setSelected(null);
+              setCredentials({
+                name: fullName(selected),
+                username: view.username,
+                temporaryPassword: view.temporaryPassword,
+                phone: selected.phone,
+              });
+            }}
+          />
+        ) : null}
+      </Dialog>
+      <Dialog open={credentials !== null} onOpenChange={(open) => !open && setCredentials(null)}>
+        {credentials ? (
+          <DialogContent title="Datos de acceso" description="Entrégalos a la persona.">
+            <CredentialsCard {...credentials} />
+          </DialogContent>
+        ) : null}
       </Dialog>
     </div>
   );
@@ -181,87 +231,134 @@ function RoleCheckboxes({
   );
 }
 
-function InviteDialog({ onDone }: { onDone: () => void }) {
-  const invite = useInviteStaff();
-  const form = useForm<
-    z.input<typeof createStaffInvitationSchema>,
-    unknown,
-    z.output<typeof createStaffInvitationSchema>
-  >({
-    resolver: zodResolver(createStaffInvitationSchema),
-    defaultValues: { email: '', roles: ['TEACHER'] },
+function CreateAccountDialog({
+  allowedRoles,
+  onDone,
+}: {
+  allowedRoles: Role[];
+  onDone: (account: CreatedAccountView) => void;
+}) {
+  const create = useCreateStaff();
+  const form = useForm<CreateStaffInput>({
+    resolver: zodResolver(createStaffSchema),
+    defaultValues: { firstName: '', lastName: '', email: '', phone: '', roles: ['TEACHER'] },
   });
   const { errors } = form.formState;
-  const selectedRoles = useWatch({ control: form.control, name: 'roles' }) as Role[];
+  const selectedRoles = (useWatch({ control: form.control, name: 'roles' }) ?? []) as Role[];
   return (
     <DialogContent
-      title="Invitar personal"
-      description="Le llegará un correo con un enlace para crear su cuenta (vence en 7 días)."
+      title={allowedRoles.length > 1 ? 'Nueva cuenta' : 'Agregar maestro(a)'}
+      description="Se crea su usuario y una contraseña temporal para entregarle."
     >
       <form
         noValidate
         className="flex flex-col gap-4"
-        onSubmit={form.handleSubmit((values) => invite.mutate(values, { onSuccess: onDone }))}
+        onSubmit={form.handleSubmit((values) => create.mutate(values, { onSuccess: onDone }))}
       >
-        <FormField id="email" label="Correo electrónico" error={errors.email?.message}>
-          <Input
-            type="email"
-            inputMode="email"
-            autoCapitalize="none"
-            {...fieldProps('email', errors.email?.message)}
-            {...form.register('email')}
+        {create.isError ? <Alert>{errorMessage(create.error)}</Alert> : null}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField id="u-firstName" label="Nombre(s)" error={errors.firstName?.message}>
+            <Input
+              {...fieldProps('u-firstName', errors.firstName?.message)}
+              {...form.register('firstName')}
+            />
+          </FormField>
+          <FormField id="u-lastName" label="Apellidos" error={errors.lastName?.message}>
+            <Input
+              {...fieldProps('u-lastName', errors.lastName?.message)}
+              {...form.register('lastName')}
+            />
+          </FormField>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField id="u-phone" label="Teléfono (opcional)" error={errors.phone?.message}>
+            <Input
+              type="tel"
+              inputMode="tel"
+              {...fieldProps('u-phone', errors.phone?.message)}
+              {...form.register('phone')}
+            />
+          </FormField>
+          <FormField id="u-email" label="Correo (opcional)" error={errors.email?.message}>
+            <Input
+              type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              {...fieldProps('u-email', errors.email?.message)}
+              {...form.register('email')}
+            />
+          </FormField>
+        </div>
+        {allowedRoles.length > 1 ? (
+          <RoleCheckboxes
+            roles={allowedRoles}
+            value={selectedRoles}
+            onChange={(roles) =>
+              form.setValue('roles', roles as (typeof STAFF_ROLES)[number][], {
+                shouldValidate: true,
+              })
+            }
           />
-        </FormField>
-        <RoleCheckboxes
-          roles={STAFF_ROLES}
-          value={selectedRoles}
-          onChange={(roles) =>
-            form.setValue('roles', roles as (typeof STAFF_ROLES)[number][], {
-              shouldValidate: true,
-            })
-          }
-        />
+        ) : null}
         {errors.roles?.message ? (
           <p className="text-sm text-destructive">{errors.roles.message}</p>
         ) : null}
-        <Button type="submit" size="lg" disabled={invite.isPending}>
-          {invite.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
-          Enviar invitación
+        <Button type="submit" size="lg" disabled={create.isPending}>
+          {create.isPending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
+          Crear cuenta
         </Button>
       </form>
     </DialogContent>
   );
 }
 
-function ManageUserDialog({ user, onDone }: { user: User; onDone: () => void }) {
+function ManageUserDialog({
+  user,
+  allowedRoles,
+  onDone,
+  onReset,
+}: {
+  user: User;
+  allowedRoles: Role[];
+  onDone: () => void;
+  onReset: (view: TemporaryPasswordView) => void;
+}) {
   const { user: me } = useAuth();
   const [roles, setRoles] = useState<Role[]>(user.roles);
   const update = useUpdateUser();
   const disable = useUserAction('disable');
   const enable = useUserAction('enable');
-  const reset = useUserAction('reset-password');
+  const reset = useResetUserPassword();
   const isMe = me?.id === user.id;
 
   return (
-    <DialogContent title={fullName(user)} description={user.email}>
+    <DialogContent title={fullName(user)} description={`Usuario ${user.username}`}>
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3">
-          <RoleCheckboxes roles={ROLES} value={roles} onChange={setRoles} />
-          <Button
-            variant="outline"
-            disabled={update.isPending || roles.length === 0}
-            onClick={() => update.mutate({ id: user.id, roles }, { onSuccess: onDone })}
-          >
-            <ShieldCheck aria-hidden /> Guardar roles
-          </Button>
-        </div>
+        {allowedRoles.length > 1 ? (
+          <div className="flex flex-col gap-3">
+            <RoleCheckboxes roles={allowedRoles} value={roles} onChange={setRoles} />
+            <Button
+              variant="outline"
+              disabled={update.isPending || roles.length === 0}
+              onClick={() => update.mutate({ id: user.id, roles }, { onSuccess: onDone })}
+            >
+              <ShieldCheck aria-hidden /> Guardar roles
+            </Button>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           <Button
             variant="outline"
             disabled={reset.isPending || user.status !== 'ACTIVE'}
-            onClick={() => reset.mutate(user.id, { onSuccess: onDone })}
+            onClick={() => {
+              if (
+                window.confirm(`¿Generar una contraseña temporal nueva para ${fullName(user)}?`)
+              ) {
+                reset.mutate(user.id, { onSuccess: onReset });
+              }
+            }}
           >
-            <KeyRound aria-hidden /> Forzar cambio de contraseña
+            <KeyRound aria-hidden /> Nueva contraseña temporal
           </Button>
           {user.status === 'ACTIVE' ? (
             <Button
@@ -281,7 +378,8 @@ function ManageUserDialog({ user, onDone }: { user: User; onDone: () => void }) 
             </Button>
           )}
           <p className="text-xs text-muted-foreground">
-            Desactivar y forzar el cambio de contraseña cierran todas sus sesiones abiertas.
+            Desactivar y la contraseña temporal cierran todas sus sesiones abiertas. Para quitar a
+            un maestro de un grupo, ve a Grupos → Maestros del grupo.
           </p>
         </div>
       </div>

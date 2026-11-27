@@ -1,5 +1,5 @@
 import type {
-  GuardianInvitationView,
+  CreatedAccountView,
   ImportPreview,
   PeriodResultsView,
   PeriodView,
@@ -9,6 +9,7 @@ import ExcelJS from 'exceljs';
 import type request from 'supertest';
 import golden from '../../../packages/shared/test/fixtures/periodo1-5B.json';
 import { fixtureBuffer } from './fixture';
+import { activateGuardian, createGuardian } from './guardian-helpers';
 import { createTestContext, type TestContext } from './helpers';
 import { type SchoolSetup, setupSchool } from './school-setup';
 
@@ -74,18 +75,11 @@ describe('Student history and Excel export (e2e)', () => {
         )
       ).body as PeriodResultsView
     ).rows;
-    const code = (await as(viry).post('/invitations/guardian', { studentId: nl(2).student.id }))
-      .body as GuardianInvitationView;
-    const res = await ctx.http().post('/api/v1/auth/register-guardian').send({
-      code: code.code,
-      firstName: 'Familia',
-      lastName: 'Historial',
-      email: 'familia.historial@correo.mx',
-      password: 'contraseña-de-familia',
+    const created = await createGuardian(ctx, viry, nl(2).student.id, {
+      phone: '3129990000',
       relationship: 'PADRE',
-      acceptPrivacy: true,
     });
-    guardian = res.body.accessToken as string;
+    guardian = await activateGuardian(ctx, created.body as CreatedAccountView);
   });
 
   afterAll(async () => {

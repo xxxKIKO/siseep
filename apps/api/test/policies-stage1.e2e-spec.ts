@@ -165,7 +165,7 @@ describe('Authorization matrix, stage 1 (e2e)', () => {
       expect((await as(token).patch(target, { name: 'Tabla libreta CN' })).status).toBe(403);
     });
 
-    it('cannot create catalogs', async () => {
+    it('creates school years (administers the school) but not students', async () => {
       const token = await ctx.token(school.director);
       expect((await as(token).post('/students', { firstName: 'A', lastName1: 'B' })).status).toBe(
         403,
@@ -178,7 +178,7 @@ describe('Authorization matrix, stage 1 (e2e)', () => {
             endDate: '2028-07-14',
           })
         ).status,
-      ).toBe(403);
+      ).toBe(201);
     });
   });
 

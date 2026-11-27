@@ -26,23 +26,24 @@ Hay cuatro roles. Cada usuario puede tener uno o varios (un director que tambié
 
 | Acción | Admin | Director | Maestro | Padre / tutor |
 | --- | --- | --- | --- | --- |
-| Crear y administrar usuarios, roles, escuela, ciclos y periodos | Sí | No | No | No |
-| Crear grupos, alumnos e inscripciones; importar Excel | Sí | No | No | No |
+| Crear y administrar usuarios, roles, escuela, ciclos y periodos | Sí | Sí, salvo admins y reglas de cálculo (cambio pedido el 27 nov) | No | No |
+| Crear grupos y asignarles maestros | Sí | Sí | No | No |
+| Crear alumnos e inscripciones; importar Excel | Sí | No | No | No |
 | Ver grupos, actividades, calificaciones y observaciones | Todo | Toda su escuela | Solo sus grupos asignados | Solo sus hijos, lo publicado |
 | Crear y editar actividades y calificaciones | Sí | Solo con permiso del admin | Sus grupos, periodo abierto | No |
 | Notas diarias del alumno | Sí | Lectura (edición con permiso) | Crear y editar las suyas | Ve las marcadas "visible para padres" |
 | Ajustes de calificación (`*`) y observaciones de periodo | Sí | Solo con permiso | Sus grupos, antes de cerrar | Ve lo publicado |
-| Cerrar periodo y publicar boletas | Sí | Solo con permiso | Pide el cierre de sus grupos | No |
-| Reabrir un periodo cerrado | Sí | No | No | No |
+| Cerrar periodo y publicar boletas | Sí | Sí | Pide el cierre de sus grupos | No |
+| Reabrir un periodo cerrado | Sí | Sí | No | No |
 | Imprimir o descargar boletas (PDF/Word) | Sí | Sí | Sus grupos | La de su hijo, ya publicada |
-| Vincular padres con alumnos | Sí | No | Genera código de invitación | Canjea el código |
+| Crear cuentas de padres y vincularlas con alumnos | Sí | Sí | Sí, de sus alumnos | No |
 | Ver bitácora de cambios | Sí | Sí | Solo de sus grupos | No |
 
 **Permisos especiales (otorgados por el admin).** El admin puede darle a un director, o a cualquier usuario, un permiso de edición puntual. Se guarda en `permissionGrants` con estas partes: acción (por ejemplo `grade:update`), alcance (toda la escuela o un grupo), fecha de vencimiento opcional y quién lo otorgó. Al vencer, el permiso deja de aplicar sin que nadie lo quite.
 
 **Maestros de materia.** Inglés y Educación Física entran a la calificación de Lenguajes y De lo humano (30%). Un maestro puede estar asignado a un grupo completo (titular) o solo a una materia (`teachingAssignments.scope`). El de Inglés solo ve y captura Inglés de ese grupo.
 
-**Padres y tutores.** Un tutor se vincula a uno o varios alumnos (hermanos en distintos grupos) con un código de invitación de un solo uso que genera el maestro o el admin. Solo ve:
+**Padres y tutores.** El maestro titular (o la dirección) crea la cuenta del padre o tutor desde el alumno, con nombre, teléfono, domicilio y parentesco. El teléfono identifica a la familia: si ya está registrado con otro alumno de la escuela, el nuevo hijo se vincula a la misma cuenta. El padre recibe un usuario (`TUT26-0001`) y una contraseña temporal que cambia en su primer ingreso, cuando acepta el aviso de privacidad. Solo ve:
 
 - Actividades y calificaciones que el maestro marcó como visibles. Por defecto son visibles 24 horas después de capturarse, para dar tiempo a corregir.
 - Notas marcadas "visible para padres".
@@ -244,8 +245,9 @@ El sistema guarda calificaciones y observaciones de menores de edad, así que la
 - Contraseñas con argon2id; mínimo 10 caracteres.
 - Access token JWT de 15 minutos, guardado solo en memoria. Refresh token de 30 días en cookie `httpOnly`, `Secure`, `SameSite=Strict`, que se rota en cada uso y se puede revocar desde "cerrar sesión en todos los dispositivos".
 - Límite de 5 intentos de login por minuto por IP y correo; después, espera de 15 minutos.
-- No hay registro abierto: todos entran por invitación. Para el personal, el admin envía un enlace. Para los padres, se entrega un código de 8 caracteres de un solo uso que vence en 14 días.
-- Al canjear el código, el padre confirma el nombre del alumno, lo que evita vincular al alumno equivocado.
+- No hay registro abierto. Cada persona entra con un usuario que indica su tipo, el año y un consecutivo (`ADM26-0001`, `DIR26-0001`, `MAE26-0001`, `TUT26-0001`). La escuela crea las cuentas y entrega una contraseña temporal; mientras no la cambie, la cuenta solo puede cambiar su contraseña.
+- Cada usuario edita su perfil (nombre, correo opcional, teléfono, domicilio y foto). Los alumnos no tienen foto.
+- Las cuentas de padres se crean desde el alumno; el teléfono une a los hermanos en una sola cuenta.
 
 **Autorización**
 
