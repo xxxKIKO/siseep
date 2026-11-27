@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import { MongooseModule } from '@nestjs/mongoose';
+import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
+import type { Connection } from 'mongoose';
+import { MongoThrottlerStorage } from './mongo-throttler.storage';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigService } from '../config/app-config.service';
 import { GuardiansModule } from '../guardians/guardians.module';
@@ -31,8 +33,10 @@ import { SessionsService } from './sessions.service';
       }),
     }),
     ThrottlerModule.forRootAsync({
-      inject: [AppConfigService],
-      useFactory: (config: AppConfigService) => ({
+      inject: [AppConfigService, getConnectionToken()],
+      useFactory: (config: AppConfigService, connection: Connection) => ({
+        // Shared by every API instance (production runs 2): counters live in MongoDB.
+        storage: new MongoThrottlerStorage(connection),
         throttlers: [
           {
             name: LOGIN_THROTTLER,

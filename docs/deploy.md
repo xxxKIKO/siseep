@@ -1,4 +1,4 @@
-# Despliegue de staging
+# Despliegue (staging y producción)
 
 Arquitectura de staging:
 
@@ -155,14 +155,91 @@ Atlas siempre es un replica set, así que las transacciones funcionan.
 | `MAIL_FROM`                                      | sí           | `Evaluación Allende <no-responder@…>` | Dominio verificado en Resend                                                           |
 | `RESEND_API_KEY`                                 | con `resend` | `re_…`                                |                                                                                        |
 | `SEED_*`                                         | para el seed |                                       | Contraseñas de 10+ caracteres; solo se usan al crear la cuenta                         |
+| `SENTRY_DSN`                                     | no           | `https://…@o0.ingest.sentry.io/0`     | Errores de la API en Sentry, sin datos personales                                      |
+| `SENTRY_TRACES_SAMPLE_RATE`                      | no           | `0`                                   | Rendimiento: 0 = apagado                                                               |
+
+En **producción** (`NODE_ENV=production`) la API no arranca si: `COOKIE_SECURE` no es `true`,
+`WEB_ORIGIN` o `WEB_URL` no usan `https://` (o apuntan a localhost), `SWAGGER_ENABLED` es `true` o
+`MAIL_DRIVER` no es `resend`. En staging aplican las mismas reglas salvo Swagger y correo.
 
 ## Notas
 
-- **Límite de intentos**: se guarda en memoria de la instancia. Con una sola instancia en staging
-  está bien. Si en producción hay 2 instancias (etapa 6), cada una cuenta por separado; ahí habrá
-  que pasar el contador a Redis o a Mongo.
+- **Límite de intentos**: desde la etapa 6 se guarda en MongoDB (colección `throttles`, con TTL),
+  así que las 2 instancias de producción comparten el contador.
+- **Caché del resumen**: es de 30 s y vive en cada instancia. Con 2 instancias, un resumen puede
+  tardar hasta 30 s en reflejar una calificación guardada en la otra instancia. La captura, el
+  cierre y las boletas no usan esa caché.
 - **Puppeteer**: la imagen ya trae Chromium (`PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`).
   Railway necesita al menos 1 GB de RAM cuando se generen boletas (etapa 4).
 - **Comprobar `TRUST_PROXY`**: después de desplegar, intenta 6 logins fallidos desde tu celular
   con datos móviles y otros desde tu computadora. Solo debe bloquearse el dispositivo que falló.
   Si se bloquean los dos, el valor no es correcto: prueba con `1` o con `3`.
+
+## Producción (etapa 6)
+
+```text
+Navegador ──HTTPS──▶ Vercel (dominio propio, CSP estricta, PWA)
+                       └─ /api/*  ──rewrite──▶ Railway (2 instancias) ──▶ MongoDB Atlas M10
+```
+
+### Dominio y HTTPS
+
+1. Elige el dominio (por ejemplo `evaluacion.escuelaallende.mx`). **Pendiente de decidir.**
+2. En Vercel → _Settings → Domains_ agrégalo y crea en tu DNS el registro que Vercel indique
+   (`CNAME` a `cname.vercel-dns.com`). Vercel emite el certificado HTTPS solo.
+3. En `apps/web/vercel.json`, cambia el destino del rewrite `/api/:path*` por la URL pública de
+   Railway de producción.
+4. En Railway pon `WEB_ORIGIN` y `WEB_URL` con `https://<tu-dominio>`.
+
+### MongoDB Atlas M10
+
+1. Cluster **M10** (no M0: M0 no tiene respaldos). Región la misma de Railway.
+2. _Backup_ → **Cloud Backup** activo con política diaria y **retención de 7 días**
+   (_Edit Policy_: Daily snapshot, retain 7 days). M10 trae respaldo continuo; con esto basta.
+3. Usuario propio `siseep-prod` con contraseña larga (distinto al de staging).
+4. **Prueba de restauración (una vez, en staging):** _Backup → Snapshots → Restore_ → elige el
+   cluster de staging como destino. Después entra a staging y revisa que estén los grupos y
+   calificaciones. Anota la fecha en `docs/go-live.md`.
+
+### Railway (API)
+
+`railway.toml` ya pide **2 instancias** (`numReplicas = 2`), corre `node dist/scripts/migrate.js`
+antes de cada despliegue y usa `/api/v1/health` como healthcheck. La API responde 200 solo si
+MongoDB contesta y Chromium está listo para las boletas.
+
+Variables de producción (además de las de staging):
+
+```env
+NODE_ENV=production
+SWAGGER_ENABLED=false
+COOKIE_SECURE=true
+WEB_ORIGIN=https://<tu-dominio>
+WEB_URL=https://<tu-dominio>
+MAIL_DRIVER=resend
+MAIL_FROM=Evaluación Allende <no-responder@<tu-dominio>>
+SENTRY_DSN=<DSN del proyecto siseep-api>
+```
+
+Plan con al menos **1 GB de RAM por instancia** (Puppeteer).
+
+### Vercel (web)
+
+1. Proyecto con _Root Directory_ `apps/web` (lee `vercel.json`: CSP, HSTS, `X-Robots-Tag`,
+   caché del service worker).
+2. Variable de compilación opcional: `VITE_SENTRY_DSN` (proyecto `siseep-web`).
+3. Íconos de la app: con el logo real de la escuela, corre `pnpm icons:build "<ruta al logo>"`
+   y sube los cambios de `apps/web/public/icons/`.
+
+### Migración
+
+`pnpm migrate:prod` (con `MONGODB_URI` de producción en el ambiente) crea todos los índices y,
+si faltan, la escuela, el ciclo **2026-2027** y sus reglas de cálculo. Es idempotente: Railway la
+corre en cada despliegue y se puede repetir a mano sin riesgo. Nunca borra índices ni datos; si
+encuentra índices que ya no se usan, solo los reporta.
+
+### Sentry
+
+Dos proyectos (`siseep-api`, `siseep-web`). Ninguno recibe datos personales: Sentry 11 reemplazó
+`sendDefaultPii` por `dataCollection` y ahí todo está apagado (usuarios, cookies, cabeceras,
+cuerpos, parámetros de URL); además se quitan correos y textos entre comillas de los mensajes de
+error. Activa alertas por correo para errores nuevos.

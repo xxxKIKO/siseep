@@ -13,13 +13,16 @@ import {
   FIELD_NAMES,
   FIELD_SHORT_NAMES,
   type FieldKey,
+  type HistoryPeriod,
   roundTo,
   shortStudentName,
+  type StudentHistory,
   studentPeriodResult,
 } from '@siseep/shared';
 import type { Model, Types } from 'mongoose';
 import { Activity } from '../activities/activity.schema';
 import { Grade } from '../activities/grade.schema';
+import { historyFields, HistoryService } from '../closing/history.service';
 import { Errors } from '../common/app.exception';
 import type { Actor } from '../common/request-user';
 import { oid, studentFullName, teacherSummary } from '../common/scope';
@@ -74,6 +77,7 @@ export class GuardianPortalService {
     private readonly periodStatus: PeriodStatusService,
     private readonly periodData: PeriodDataService,
     private readonly cards: ReportCardsService,
+    private readonly historyService: HistoryService,
   ) {}
 
   private notFound() {
@@ -343,6 +347,80 @@ export class GuardianPortalService {
       text: n.text,
       author: authorBy.get(n.authorId.toString()) ?? '',
     }));
+  }
+
+  /**
+   * Finals per field and period for the family: the published report card (photo) when the
+   * period is PUBLISHED; otherwise the average "en curso" of the visible grades only.
+   */
+  async history(
+    studentId: string,
+    schoolYearId: string | undefined,
+    actor: Actor,
+  ): Promise<StudentHistory> {
+    await this.link(studentId, actor);
+    if (schoolYearId && !/^[a-f\d]{24}$/i.test(schoolYearId)) throw this.notFound();
+    const enrollment = await this.historyService.enrollmentOf(
+      studentId,
+      actor.user.schoolId,
+      schoolYearId,
+    );
+    if (!enrollment) throw this.notFound();
+    const [student, year, periods, scheme] = await Promise.all([
+      this.studentModel.findById(studentId).lean().exec(),
+      this.yearModel.findById(enrollment.schoolYearId, { name: 1 }).lean().exec(),
+      this.periodModel
+        .find({ schoolYearId: enrollment.schoolYearId })
+        .sort({ number: 1 })
+        .lean()
+        .exec(),
+      this.periodData.scheme(enrollment.schoolYearId),
+    ]);
+    if (!student) throw this.notFound();
+    const statuses = await this.periodStatus.effectiveManyPeriods(
+      periods.map((p) => p._id),
+      enrollment.groupId,
+    );
+    const snapshots = await this.resultModel
+      .find({
+        studentId: oid(studentId),
+        periodId: { $in: periods.map((p) => p._id) },
+        snapshotAt: { $ne: null },
+      })
+      .lean()
+      .exec();
+    const now = new Date();
+    const result: HistoryPeriod[] = [];
+    for (const period of periods) {
+      const status = statuses.get(period._id.toString()) ?? period.status;
+      const base = { id: period._id.toString(), number: period.number, name: period.name, status };
+      const snapshot = snapshots.find((s) => s.periodId.equals(period._id));
+      if (status === 'PUBLISHED' && snapshot) {
+        result.push({
+          ...base,
+          source: 'snapshot',
+          values: Object.fromEntries(snapshot.fields.map((f) => [f.fieldKey, f.final ?? null])),
+          generalAverage: snapshot.generalAverage ?? null,
+        });
+      } else if (period.startDate > now) {
+        result.push({ ...base, source: 'none', values: {}, generalAverage: null });
+      } else {
+        const overview = await this.overview(studentId, period._id.toString(), actor);
+        const values = Object.fromEntries(overview.fields.map((f) => [f.fieldKey, f.average]));
+        result.push({
+          ...base,
+          source: overview.fields.some((f) => f.average !== null) ? 'live' : 'none',
+          values,
+          generalAverage: null,
+        });
+      }
+    }
+    return {
+      student: { id: student._id.toString(), fullName: studentFullName(student) },
+      schoolYear: { id: enrollment.schoolYearId.toString(), name: year?.name ?? '' },
+      fields: historyFields(scheme),
+      periods: result,
+    };
   }
 
   /** Report cards of PUBLISHED periods only, from the closing snapshot. */

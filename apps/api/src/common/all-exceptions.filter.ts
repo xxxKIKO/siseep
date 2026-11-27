@@ -1,3 +1,6 @@
+import * as Sentry from '@sentry/nestjs';
+import { sentryEnabled } from '../instrument';
+import { scrubText } from './scrub';
 import {
   type ArgumentsHost,
   Catch,
@@ -45,7 +48,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<Response>();
     const body = this.toBody(exception);
     if (body.statusCode >= 500) {
-      this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+      // Logs and Sentry never carry personal data (emails, duplicate values, quoted strings).
+      const text =
+        exception instanceof Error ? (exception.stack ?? exception.message) : String(exception);
+      this.logger.error(scrubText(text));
+      if (sentryEnabled) Sentry.captureException(exception);
     }
     response.status(body.statusCode).json(body);
   }

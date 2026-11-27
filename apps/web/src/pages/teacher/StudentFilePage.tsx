@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useStudentGrades, useStudentNotes } from '@/api/capture';
 import { useGroup } from '@/api/catalog';
+import { useStudentHistory } from '@/api/closing';
 import { useCan, usePortalBase } from '@/auth/ability';
 import { useAuth } from '@/auth/auth-context';
+import { HistoryChart } from '@/components/history/HistoryChart';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,7 @@ export function StudentFilePage() {
     can('read', 'Grade', { groupId });
   const canWriteNote = can('create', 'StudentNote', { groupId });
   const notes = useStudentNotes(studentId, periodId, Boolean(homeroom));
+  const history = useStudentHistory(studentId, Boolean(homeroom));
   const [writing, setWriting] = useState(false);
 
   if (grades.isLoading || group.isLoading) {
@@ -71,6 +74,7 @@ export function StudentFilePage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
         <section aria-labelledby="grades-title" className="flex flex-col gap-3">
           {homeroom ? <StudentSummaryBars studentId={studentId} periodId={periodId} /> : null}
+          {homeroom && history.data ? <HistoryChart history={history.data} /> : null}
           <h2 id="grades-title" className="text-lg font-semibold">
             Calificaciones del periodo
           </h2>

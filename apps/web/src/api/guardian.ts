@@ -14,6 +14,7 @@ import type {
   PrivacyNoticeView,
   RedeemGuardianCodeInput,
   RegisterGuardianInput,
+  StudentHistory,
 } from '@siseep/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -195,3 +196,9 @@ export const useAuditLog = (filters: AuditFilters) => {
     placeholderData: (previous) => previous,
   });
 };
+
+export const useChildHistory = (id: string) =>
+  useQuery({
+    queryKey: ['me', 'children', id, 'history'],
+    queryFn: () => api.get<StudentHistory>(`/me/children/${id}/history`),
+  });

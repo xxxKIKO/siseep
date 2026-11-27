@@ -1,9 +1,9 @@
 import { type PeriodGroupStatusView, reopenPeriodSchema } from '@siseep/shared';
-import { ClipboardCheck, LoaderCircle, Lock, RotateCcw, Send } from 'lucide-react';
+import { ClipboardCheck, FileSpreadsheet, LoaderCircle, Lock, RotateCcw, Send } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { usePeriodGroupStatuses, usePeriodTransition } from '@/api/closing';
+import { downloadPeriodExcel, usePeriodGroupStatuses, usePeriodTransition } from '@/api/closing';
 import { usePeriods, useSchoolYears } from '@/api/catalog';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
@@ -149,6 +149,19 @@ export function PeriodsPage() {
                       <Link to={`/admin/grupos/${row.groupId}/cierre?periodo=${row.periodId}`}>
                         <ClipboardCheck aria-hidden /> Ver cierre
                       </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        void downloadPeriodExcel(
+                          row.groupId,
+                          row.periodId,
+                          `Concentrado ${row.groupName}.xlsx`,
+                        ).catch((error: unknown) => toast.error(errorMessage(error)))
+                      }
+                    >
+                      <FileSpreadsheet aria-hidden /> Excel
                     </Button>
                     {row.status === 'OPEN' || row.status === 'IN_REVIEW' ? (
                       <Button

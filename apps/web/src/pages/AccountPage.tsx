@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { myLogoKey, useMyLogo } from '@/api/closing';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/auth-context';
+import { InstallAppCard } from '@/components/InstallAppCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { api, errorMessage } from '@/lib/api-client';
@@ -47,6 +48,8 @@ export function AccountPage() {
       </Card>
 
       {user.roles.includes('TEACHER') ? <TeacherLogoCard initial={Boolean(user.hasLogo)} /> : null}
+
+      <InstallAppCard />
 
       <Card>
         <CardHeader>

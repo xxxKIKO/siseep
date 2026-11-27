@@ -8,7 +8,7 @@ import {
   updateGroupSchema,
 } from '@siseep/shared';
 import { createZodDto } from 'nestjs-zod';
-import { CheckPolicies, CurrentActor } from '../common/decorators';
+import { Authenticated, CheckPolicies, CurrentActor } from '../common/decorators';
 import { ObjectIdPipe } from '../common/object-id.pipe';
 import type { Actor } from '../common/request-user';
 import { GroupsService } from './groups.service';
@@ -23,6 +23,8 @@ class CreateAssignmentDto extends createZodDto(createAssignmentSchema) {}
 export class GroupsController {
   constructor(private readonly groups: GroupsService) {}
 
+  // Scoped list: whoever reads no group (e.g. a guardian) gets an empty list.
+  @Authenticated()
   @Get()
   @ApiOperation({ summary: 'Grupos visibles (maestro: solo los suyos)' })
   list(

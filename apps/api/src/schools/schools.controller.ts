@@ -19,7 +19,7 @@ import {
 } from '@siseep/shared';
 import type { Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
-import { CheckPolicies, CurrentActor, Public } from '../common/decorators';
+import { Authenticated, CheckPolicies, CurrentActor, Public } from '../common/decorators';
 import type { Actor } from '../common/request-user';
 import { SchoolsService } from './schools.service';
 
@@ -32,6 +32,7 @@ class UpdatePrivacyNoticeDto extends createZodDto(updatePrivacyNoticeSchema) {}
 export class SchoolsController {
   constructor(private readonly schools: SchoolsService) {}
 
+  @Authenticated()
   @Get()
   @ApiOperation({ summary: 'Datos de la escuela del usuario' })
   get(@CurrentActor() actor: Actor): Promise<SchoolView> {
@@ -75,6 +76,7 @@ export class SchoolsController {
     return this.schools.setLogo(file, actor);
   }
 
+  @Authenticated()
   @Get('logo')
   @ApiOperation({ summary: 'Logo de la escuela' })
   async getLogo(@CurrentActor() actor: Actor, @Res() res: Response): Promise<void> {

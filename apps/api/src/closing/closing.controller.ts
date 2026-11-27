@@ -14,6 +14,7 @@ import {
   type PeriodGroupStatusView,
   type PeriodResultRow,
   type PeriodResultsView,
+  type StudentHistory,
   reopenPeriodSchema,
   updatePeriodResultSchema,
 } from '@siseep/shared';
@@ -24,10 +25,19 @@ import { CheckPolicies, CurrentActor } from '../common/decorators';
 import { ObjectIdPipe } from '../common/object-id.pipe';
 import type { Actor } from '../common/request-user';
 import { ClosingService } from './closing.service';
+import { HistoryService } from './history.service';
 import { PeriodResultsService } from './period-results.service';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, { message: 'Periodo inválido' });
 class PeriodQueryDto extends createZodDto(z.object({ periodId: objectId })) {}
+class HistoryQueryDto extends createZodDto(
+  z.object({
+    schoolYearId: z
+      .string()
+      .regex(/^[a-f\d]{24}$/i, { message: 'Ciclo inválido' })
+      .optional(),
+  }),
+) {}
 class ReopenDto extends createZodDto(reopenPeriodSchema) {}
 class UpdatePeriodResultDto extends createZodDto(updatePeriodResultSchema) {}
 
@@ -41,6 +51,7 @@ export class ClosingController {
   constructor(
     private readonly closing: ClosingService,
     private readonly results: PeriodResultsService,
+    private readonly histories: HistoryService,
   ) {}
 
   @Get('groups/:id/period-results')
@@ -65,6 +76,19 @@ export class ClosingController {
     @CurrentActor() actor: Actor,
   ): Promise<PeriodResultRow> {
     return this.results.update(id, body, actor);
+  }
+
+  @Get('students/:id/history')
+  @CheckPolicies((ability) => ability.can('read', 'PeriodResult'))
+  @ApiOperation({
+    summary: 'Historial del alumno: final por campo en cada periodo del ciclo (?schoolYearId=)',
+  })
+  history(
+    @Param('id', ObjectIdPipe) id: string,
+    @Query() query: HistoryQueryDto,
+    @CurrentActor() actor: Actor,
+  ): Promise<StudentHistory> {
+    return this.histories.forStudent(id, query.schoolYearId, actor);
   }
 
   @Get('periods/:id/groups')
