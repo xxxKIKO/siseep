@@ -129,3 +129,24 @@ export interface PeriodResultsView {
   issues: ClosingIssue[];
   notes: Record<string, NoteView[]>;
 }
+
+// ---------------------------------------------------------------------------
+// History: finals per field and period (stage 6)
+// ---------------------------------------------------------------------------
+export interface HistoryPeriod {
+  id: string;
+  number: number;
+  name: string;
+  status: PeriodStatus;
+  /** snapshot = closing photo; live = current calculation; none = nothing to show yet. */
+  source: 'snapshot' | 'live' | 'none';
+  values: Partial<Record<FieldKey, number | null>>;
+  generalAverage: number | null;
+}
+
+export interface StudentHistory {
+  student: { id: string; fullName: string };
+  schoolYear: { id: string; name: string };
+  fields: { key: FieldKey; name: string; shortName: string; color: string }[];
+  periods: HistoryPeriod[];
+}

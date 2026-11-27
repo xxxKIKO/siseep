@@ -2,6 +2,7 @@ import type {
   PeriodGroupStatusView,
   PeriodResultRow,
   PeriodResultsView,
+  StudentHistory,
   UpdatePeriodResultInput,
 } from '@siseep/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -137,3 +138,28 @@ export const useMyLogo = (enabled: boolean) =>
     staleTime: Infinity,
     retry: false,
   });
+
+// ---- History and Excel export (stage 6) -------------------------------------------------
+export const useStudentHistory = (studentId: string, enabled = true) =>
+  useQuery({
+    queryKey: ['students', studentId, 'history'],
+    enabled,
+    queryFn: () => api.get<StudentHistory>(`/students/${studentId}/history`),
+  });
+
+/** "Concentrado 5°B - Periodo I.xlsx": Resumen + one sheet per field. */
+export async function downloadPeriodExcel(
+  groupId: string,
+  periodId: string,
+  fileName: string,
+): Promise<void> {
+  const blob = await api.blob(`/groups/${groupId}/period-results.xlsx?periodId=${periodId}`);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}

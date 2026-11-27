@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagg
 import { LOGO_MAX_BYTES, type User } from '@siseep/shared';
 import type { Response } from 'express';
 import { Errors } from '../common/app.exception';
-import { CurrentUser } from '../common/decorators';
+import { Authenticated, CurrentUser } from '../common/decorators';
 import type { RequestUser } from '../common/request-user';
 import { FilesService } from '../files/files.service';
 import { toPublicUser } from './user.schema';
@@ -26,6 +26,7 @@ import { toPublicUser } from './user.schema';
 export class MeController {
   constructor(private readonly files: FilesService) {}
 
+  @Authenticated()
   @Put('logo')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Sube tu logo para las boletas (PNG o JPG, máximo 1 MB)' })
@@ -42,6 +43,7 @@ export class MeController {
     return toPublicUser(user.doc);
   }
 
+  @Authenticated()
   @Get('logo')
   @ApiOperation({ summary: 'Tu logo para las boletas' })
   async getLogo(@CurrentUser() user: RequestUser, @Res() res: Response): Promise<void> {
@@ -52,6 +54,7 @@ export class MeController {
     res.send(logo.buffer);
   }
 
+  @Authenticated()
   @Delete('logo')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Quita tu logo de las boletas' })

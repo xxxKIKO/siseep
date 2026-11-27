@@ -1,40 +1,58 @@
-import { ROLE_HOME_PATHS, type Role } from '@siseep/shared';
+import { ROLE_HOME_PATHS, type Role } from '@siseep/shared/core';
+import { lazy, type ReactNode, Suspense } from 'react';
 import type { RouteObject } from 'react-router';
 import { GuestOnly, RequireAuth, RequireRole, RootRedirect } from '@/auth/guards';
+import { FullPageSpinner } from '@/components/FullPageSpinner';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { AccountPage } from '@/pages/AccountPage';
-import { AcceptInvitePage } from '@/pages/auth/AcceptInvitePage';
-import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
-import { LoginPage } from '@/pages/auth/LoginPage';
-import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
-import { AdminHomePage } from '@/pages/admin/AdminHomePage';
-import { GradingSchemePage } from '@/pages/admin/GradingSchemePage';
-import { GrantsPage } from '@/pages/admin/GrantsPage';
-import { GroupDetailPage } from '@/pages/admin/GroupDetailPage';
-import { GroupsPage } from '@/pages/admin/GroupsPage';
-import { ImportPage } from '@/pages/admin/ImportPage';
-import { PeriodsPage } from '@/pages/admin/PeriodsPage';
-import { SchoolPage } from '@/pages/admin/SchoolPage';
-import { SchoolYearsPage } from '@/pages/admin/SchoolYearsPage';
-import { StudentsPage } from '@/pages/admin/StudentsPage';
-import { UsersPage } from '@/pages/admin/UsersPage';
-import { ClosingPage } from '@/pages/closing/ClosingPage';
-import { AuditPage } from '@/pages/director/AuditPage';
-import { DirectorDashboardPage } from '@/pages/director/DirectorDashboardPage';
-import { AddChildPage } from '@/pages/guardian/AddChildPage';
-import { ChildPage } from '@/pages/guardian/ChildPage';
-import { GuardianHomePage } from '@/pages/guardian/GuardianHomePage';
-import { GuardianSignUpPage } from '@/pages/public/GuardianSignUpPage';
-import { PrivacyPage } from '@/pages/public/PrivacyPage';
-import { GuardiansPage } from '@/pages/teacher/GuardiansPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { CapturePage } from '@/pages/teacher/capture/CapturePage';
-import { StudentFilePage } from '@/pages/teacher/StudentFilePage';
-import { GroupSummaryPage } from '@/pages/teacher/GroupSummaryPage';
-import { TeacherGroupPage } from '@/pages/teacher/TeacherGroupPage';
-import { TeacherHomePage } from '@/pages/teacher/TeacherHomePage';
 
-/** Screens of each portal. Portals without screens yet show "Próximamente". */
+/** `lazy` for a named export: each portal is its own chunk (stage 6, performance). */
+// Function components only: their props are kept (e.g. ClosingPage's backTo).
+function lazyPage<M extends Record<K, (props: P) => ReactNode>, K extends keyof M, P = never>(
+  load: () => Promise<M>,
+  name: K,
+) {
+  return lazy(() => load().then((module) => ({ default: module[name] })));
+}
+const publicPages = () => import('@/portals/public');
+const admin = () => import('@/portals/admin');
+const teacher = () => import('@/portals/teacher');
+const director = () => import('@/portals/director');
+const guardian = () => import('@/portals/guardian');
+
+const LoginPage = lazyPage(publicPages, 'LoginPage');
+const AccountPage = lazyPage(publicPages, 'AccountPage');
+const AcceptInvitePage = lazyPage(publicPages, 'AcceptInvitePage');
+const ForgotPasswordPage = lazyPage(publicPages, 'ForgotPasswordPage');
+const ResetPasswordPage = lazyPage(publicPages, 'ResetPasswordPage');
+const GuardianSignUpPage = lazyPage(publicPages, 'GuardianSignUpPage');
+const PrivacyPage = lazyPage(publicPages, 'PrivacyPage');
+const AdminHomePage = lazyPage(admin, 'AdminHomePage');
+const GradingSchemePage = lazyPage(admin, 'GradingSchemePage');
+const GrantsPage = lazyPage(admin, 'GrantsPage');
+const GroupDetailPage = lazyPage(admin, 'GroupDetailPage');
+const GroupsPage = lazyPage(admin, 'GroupsPage');
+const ImportPage = lazyPage(admin, 'ImportPage');
+const PeriodsPage = lazyPage(admin, 'PeriodsPage');
+const SchoolPage = lazyPage(admin, 'SchoolPage');
+const SchoolYearsPage = lazyPage(admin, 'SchoolYearsPage');
+const StudentsPage = lazyPage(admin, 'StudentsPage');
+const UsersPage = lazyPage(admin, 'UsersPage');
+const AdminClosingPage = lazyPage(admin, 'ClosingPage');
+const ClosingPage = lazyPage(teacher, 'ClosingPage');
+const CapturePage = lazyPage(teacher, 'CapturePage');
+const GroupSummaryPage = lazyPage(teacher, 'GroupSummaryPage');
+const GuardiansPage = lazyPage(teacher, 'GuardiansPage');
+const StudentFilePage = lazyPage(teacher, 'StudentFilePage');
+const TeacherGroupPage = lazyPage(teacher, 'TeacherGroupPage');
+const TeacherHomePage = lazyPage(teacher, 'TeacherHomePage');
+const AuditPage = lazyPage(director, 'AuditPage');
+const DirectorDashboardPage = lazyPage(director, 'DirectorDashboardPage');
+const AddChildPage = lazyPage(guardian, 'AddChildPage');
+const ChildPage = lazyPage(guardian, 'ChildPage');
+const GuardianHomePage = lazyPage(guardian, 'GuardianHomePage');
+
+/** Screens of each portal (each portal is loaded on demand). */
 const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
   ADMIN: [
     { index: true, element: <AdminHomePage /> },
@@ -50,7 +68,7 @@ const PORTAL_CHILDREN: Record<Role, RouteObject[]> = {
     { path: 'periodos', element: <PeriodsPage /> },
     {
       path: 'grupos/:groupId/cierre',
-      element: <ClosingPage backTo={() => ({ to: '/admin/periodos', label: 'Periodos' })} />,
+      element: <AdminClosingPage backTo={() => ({ to: '/admin/periodos', label: 'Periodos' })} />,
     },
   ],
   // The director reuses the teacher screens: editing depends on the CASL ability (grants).
@@ -100,19 +118,22 @@ const portalRoutes: RouteObject[] = (Object.keys(PORTAL_CHILDREN) as Role[]).map
   children: PORTAL_CHILDREN[role],
 }));
 
+/** Pages outside the app layout wait for their chunk with a spinner. */
+const suspended = (page: ReactNode) => <Suspense fallback={<FullPageSpinner />}>{page}</Suspense>;
+
 export const routes: RouteObject[] = [
   { path: '/', element: <RootRedirect /> },
   {
     element: <GuestOnly />,
     children: [
-      { path: '/iniciar-sesion', element: <LoginPage /> },
-      { path: '/olvide-contrasena', element: <ForgotPasswordPage /> },
+      { path: '/iniciar-sesion', element: suspended(<LoginPage />) },
+      { path: '/olvide-contrasena', element: suspended(<ForgotPasswordPage />) },
     ],
   },
-  { path: '/restablecer', element: <ResetPasswordPage /> },
-  { path: '/invitacion', element: <AcceptInvitePage /> },
-  { path: '/registro', element: <GuardianSignUpPage /> },
-  { path: '/privacidad', element: <PrivacyPage /> },
+  { path: '/restablecer', element: suspended(<ResetPasswordPage />) },
+  { path: '/invitacion', element: suspended(<AcceptInvitePage />) },
+  { path: '/registro', element: suspended(<GuardianSignUpPage />) },
+  { path: '/privacidad', element: suspended(<PrivacyPage />) },
   {
     element: (
       <RequireAuth>

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest --runInBand",
     "seed": "tsc -p tsconfig.build.json --outDir dist-seed && node dist-seed/scripts/seed.js",
-    "seed:prod": "node dist/scripts/seed.js"
+    "seed:prod": "node dist/scripts/seed.js",
+    "migrate:prod": "tsc -p tsconfig.build.json --outDir dist-seed && node dist-seed/scripts/migrate.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
@@ -21,6 +22,7 @@
     "@nestjs/platform-express": "^11.1.0",
     "@nestjs/swagger": "^11.4.8",
     "@nestjs/throttler": "^6.8.0",
+    "@sentry/nestjs": "^11.19.0",
     "@siseep/shared": "workspace:*",
     "argon2": "^0.45.2",
     "cookie-parser": "^1.4.7",

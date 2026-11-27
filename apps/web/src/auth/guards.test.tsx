@@ -2,7 +2,7 @@ import type { Role, User } from '@siseep/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation, useRoutes } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '@/routes';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
@@ -42,6 +42,17 @@ const HOME_MARKERS: Record<Role, string> = {
   GUARDIAN: 'Aún no tienes hijos vinculados.',
 };
 const findHome = (role: Role) => screen.findByText(HOME_MARKERS[role]);
+
+// Portals are lazy chunks: load them once up front so each test only checks the routing.
+beforeAll(async () => {
+  await Promise.all([
+    import('@/portals/public'),
+    import('@/portals/admin'),
+    import('@/portals/teacher'),
+    import('@/portals/director'),
+    import('@/portals/guardian'),
+  ]);
+}, 60_000);
 
 // Portal homes load data: the API answers with empty lists.
 beforeEach(() => {

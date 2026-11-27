@@ -16,7 +16,25 @@ export function configureApp(app: INestApplication): void {
   express.set('trust proxy', config.get('TRUST_PROXY'));
   express.disable('x-powered-by');
   app.setGlobalPrefix(API_PREFIX);
-  app.use(helmet());
+  // The API only serves JSON, PDF, Word and images: nothing may run or be framed. Swagger UI
+  // (development only) needs scripts, so it keeps helmet's default policy.
+  app.use(
+    config.get('SWAGGER_ENABLED')
+      ? helmet()
+      : helmet({
+          contentSecurityPolicy: {
+            useDefaults: false,
+            directives: {
+              defaultSrc: ["'none'"],
+              frameAncestors: ["'none'"],
+              baseUri: ["'none'"],
+              formAction: ["'none'"],
+            },
+          },
+          crossOriginResourcePolicy: { policy: 'same-site' },
+          strictTransportSecurity: { maxAge: 31_536_000, includeSubDomains: true },
+        }),
+  );
   app.use(
     (_req: unknown, res: { setHeader(name: string, value: string): void }, next: () => void) => {
       res.setHeader('X-Robots-Tag', 'noindex, nofollow');

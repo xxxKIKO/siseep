@@ -365,8 +365,34 @@ describe('Auth (e2e)', () => {
     it('GET /health is public', async () => {
       const res = await ctx.http().get('/api/v1/health');
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ status: 'ok', db: 'up' });
+      expect(res.body).toMatchObject({ status: 'ok', db: 'up' });
+      // Puppeteer: 'ready' with Chromium, 'unavailable' without (only an error in production).
+      expect(['ready', 'unavailable']).toContain(res.body.pdf);
       expect(res.headers['x-robots-tag']).toBe('noindex, nofollow');
     });
+  });
+});
+
+describe('Login attempts are counted in MongoDB (shared by every API instance)', () => {
+  it('blocks the 6th attempt even when the requests reach two different instances', async () => {
+    // Two apps on the same test database, like two production instances. Created one after
+    // the other: each context starts by clearing the database.
+    const first = await createTestContext();
+    const second = await createTestContext();
+    try {
+      const user = await first.createUser(['TEACHER']);
+      const attempt = (ctx: TestContext) =>
+        ctx
+          .http()
+          .post('/api/v1/auth/login')
+          .send({ email: user.email, password: 'mala-contraseña-1' });
+      const statuses: number[] = [];
+      for (let i = 0; i < 6; i++) statuses.push((await attempt(i % 2 ? second : first)).status);
+      expect(statuses.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);
+      expect(statuses[5]).toBe(429);
+    } finally {
+      await second.close();
+      await first.close();
+    }
   });
 });

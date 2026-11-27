@@ -24,11 +24,12 @@ import {
   type GuardianLinkView,
   printGuardianCodesSchema,
   redeemGuardianCodeSchema,
+  type StudentHistory,
 } from '@siseep/shared';
 import type { Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { CheckPolicies, CurrentActor } from '../common/decorators';
+import { Authenticated, CheckPolicies, CurrentActor } from '../common/decorators';
 import { ObjectIdPipe } from '../common/object-id.pipe';
 import type { Actor } from '../common/request-user';
 import { UsersService } from '../users/users.service';
@@ -41,6 +42,9 @@ class PrintCodesDto extends createZodDto(printGuardianCodesSchema) {}
 class RedeemDto extends createZodDto(redeemGuardianCodeSchema) {}
 /** Ids are checked by the service: an invalid id is a 404, like any child that is not yours. */
 class PeriodQueryDto extends createZodDto(z.object({ periodId: z.string().min(1).max(64) })) {}
+class HistoryQueryDto extends createZodDto(
+  z.object({ schoolYearId: z.string().min(1).max(64).optional() }),
+) {}
 class OptionalPeriodQueryDto extends createZodDto(
   z.object({ periodId: z.string().min(1).max(64).optional() }),
 ) {}
@@ -126,6 +130,7 @@ export class GuardiansController {
     return this.links.revoke(id, actor);
   }
 
+  @Authenticated()
   // ---- guardian portal -------------------------------------------------------------
   @Post('me/children')
   @ApiOperation({ summary: 'Canjea otro código ("Agregar hijo")' })
@@ -177,6 +182,17 @@ export class GuardiansController {
     @CurrentActor() actor: Actor,
   ): Promise<ChildNote[]> {
     return this.portal.notes(id, query.periodId, actor);
+  }
+
+  @Get('me/children/:id/history')
+  @CheckPolicies(canUseGuardianPortal)
+  @ApiOperation({ summary: 'Calificación por campo en cada periodo (?schoolYearId=)' })
+  history(
+    @Param('id') id: string,
+    @Query() query: HistoryQueryDto,
+    @CurrentActor() actor: Actor,
+  ): Promise<StudentHistory> {
+    return this.portal.history(id, query.schoolYearId, actor);
   }
 
   @Get('me/children/:id/report-cards')

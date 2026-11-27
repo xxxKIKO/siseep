@@ -1,4 +1,4 @@
-import { type Role, ROLE_HOME_PATHS, ROLES } from '@siseep/shared';
+import { type Role, ROLE_HOME_PATHS, ROLES } from '@siseep/shared/core';
 
 /** When a user has several roles, this is the default order to pick their portal. */
 export const ROLE_PRIORITY: readonly Role[] = ['ADMIN', 'DIRECTOR', 'TEACHER', 'GUARDIAN'];
