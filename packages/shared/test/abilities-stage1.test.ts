@@ -155,3 +155,53 @@ describe('scopeFilter', () => {
     expect(ability.can('update', activity(GROUP_5B))).toBe(true);
   });
 });
+
+// Permission tests: never delete or skip (see CLAUDE.md).
+describe('stage 5: guardian codes and guardian links', () => {
+  it('the homeroom teacher creates guardian codes only for their group, never staff invitations', () => {
+    const ability = defineAbilityFor(user(['TEACHER']), {
+      assignments: [
+        { groupId: GROUP_5B, scope: 'HOMEROOM' },
+        { groupId: GROUP_4A, scope: 'SUBJECT', subjectKey: 'ingles' },
+      ],
+    });
+    const invitation = (groupId: string, type: string) =>
+      subject('Invitation', { schoolId: SCHOOL, groupId, type });
+    expect(ability.can('create', invitation(GROUP_5B, 'GUARDIAN'))).toBe(true);
+    expect(ability.can('create', invitation(GROUP_4A, 'GUARDIAN'))).toBe(false);
+    expect(ability.can('create', invitation(GROUP_5B, 'STAFF'))).toBe(false);
+    expect(ability.can('create', subject('Invitation', { type: 'STAFF' }))).toBe(false);
+  });
+
+  it('a guardian reads only their own active links and nothing else', () => {
+    const guardian = user(['GUARDIAN']);
+    const ability = defineAbilityFor(guardian);
+    expect(
+      ability.can(
+        'read',
+        subject('GuardianLink', { guardianUserId: guardian.id, status: 'ACTIVE' }),
+      ),
+    ).toBe(true);
+    expect(
+      ability.can('read', subject('GuardianLink', { guardianUserId: 'otro', status: 'ACTIVE' })),
+    ).toBe(false);
+    expect(
+      ability.can(
+        'read',
+        subject('GuardianLink', { guardianUserId: guardian.id, status: 'REVOKED' }),
+      ),
+    ).toBe(false);
+    expect(ability.can('create', 'Invitation')).toBe(false);
+    expect(ability.can('read', 'AuditLog')).toBe(false);
+  });
+
+  it('the director does not create guardian codes', () => {
+    const ability = defineAbilityFor(user(['DIRECTOR']));
+    expect(
+      ability.can(
+        'create',
+        subject('Invitation', { schoolId: SCHOOL, groupId: GROUP_5B, type: 'GUARDIAN' }),
+      ),
+    ).toBe(false);
+  });
+});

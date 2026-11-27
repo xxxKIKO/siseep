@@ -173,7 +173,13 @@ export const api = {
   /** multipart/form-data upload (FormData body). */
   upload: <T>(path: string, form: FormData, method: 'POST' | 'PUT' = 'POST') =>
     apiRequest<T>(path, { method, body: form }),
-  blob: (path: string) => apiRequest<Blob>(path, { method: 'GET', responseType: 'blob' }),
+  /** Binary response (PDF, images). POST for generated files that take a body. */
+  blob: (path: string, options: { method?: 'GET' | 'POST'; body?: unknown } = {}) =>
+    apiRequest<Blob>(path, {
+      method: options.method ?? 'GET',
+      body: options.body,
+      responseType: 'blob',
+    }),
 };
 
 /** Spanish message for any error, for toasts and form alerts. */

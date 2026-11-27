@@ -88,6 +88,9 @@ export function ClosingPage({
   const view = results.data;
   const fileBase = `Boletas ${view.group.name} - ${view.period.name}`;
   const locked = view.status === 'CLOSED' || view.status === 'PUBLISHED';
+  // Read-only viewers (director) see report cards once the period is CLOSED or PUBLISHED;
+  // whoever works on the period sees the draft too.
+  const cardsAvailable = locked || view.can.edit || view.can.close;
 
   const openPreview = async (title: string, studentId?: string) => {
     setPreview({ title, html: null });
@@ -194,37 +197,46 @@ export function ClosingPage({
             </Alert>
           ) : null}
 
+          {!cardsAvailable ? (
+            <p className="text-sm text-muted-foreground">
+              Las boletas se pueden ver y descargar cuando el periodo esté cerrado.
+            </p>
+          ) : null}
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <Button
-              variant="outline"
-              onClick={() => void openPreview(`Boletas ${view.group.name}`)}
-            >
-              <Eye aria-hidden /> Vista previa
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void download('pdf')}
-              disabled={downloading !== null}
-            >
-              {downloading === 'pdf' ? (
-                <LoaderCircle className="animate-spin" aria-hidden />
-              ) : (
-                <FileDown aria-hidden />
-              )}
-              Descargar PDF
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void download('docx')}
-              disabled={downloading !== null}
-            >
-              {downloading === 'docx' ? (
-                <LoaderCircle className="animate-spin" aria-hidden />
-              ) : (
-                <FileText aria-hidden />
-              )}
-              Descargar Word
-            </Button>
+            {cardsAvailable ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => void openPreview(`Boletas ${view.group.name}`)}
+                >
+                  <Eye aria-hidden /> Vista previa
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void download('pdf')}
+                  disabled={downloading !== null}
+                >
+                  {downloading === 'pdf' ? (
+                    <LoaderCircle className="animate-spin" aria-hidden />
+                  ) : (
+                    <FileDown aria-hidden />
+                  )}
+                  Descargar PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void download('docx')}
+                  disabled={downloading !== null}
+                >
+                  {downloading === 'docx' ? (
+                    <LoaderCircle className="animate-spin" aria-hidden />
+                  ) : (
+                    <FileText aria-hidden />
+                  )}
+                  Descargar Word
+                </Button>
+              </>
+            ) : null}
             {view.can.review ? (
               <Button onClick={() => run('review')} disabled={transition.isPending}>
                 <Send aria-hidden /> Enviar a revisión
@@ -248,7 +260,11 @@ export function ClosingPage({
               groupId={groupId}
               periodId={periodId}
               notes={view.notes[row.student.id] ?? []}
-              onPreview={() => void openPreview(row.student.fullName, row.student.id)}
+              onPreview={
+                cardsAvailable
+                  ? () => void openPreview(row.student.fullName, row.student.id)
+                  : undefined
+              }
             />
           </li>
         ))}
@@ -379,7 +395,7 @@ function StudentCard({
   groupId: string;
   periodId: string;
   notes: NoteView[];
-  onPreview: () => void;
+  onPreview?: () => void;
 }) {
   const update = useUpdatePeriodResult(groupId, periodId);
   const initial = useMemo(() => draftOf(row), [row]);
@@ -430,14 +446,16 @@ function StudentCard({
               {row.source === 'snapshot' ? ' · foto del cierre' : ''}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onPreview}
-            aria-label={`Vista previa de la boleta de ${row.student.fullName}`}
-          >
-            <Eye aria-hidden /> Boleta
-          </Button>
+          {onPreview ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onPreview}
+              aria-label={`Vista previa de la boleta de ${row.student.fullName}`}
+            >
+              <Eye aria-hidden /> Boleta
+            </Button>
+          ) : null}
         </div>
 
         <ul className="flex flex-col divide-y divide-border rounded-md border border-border">

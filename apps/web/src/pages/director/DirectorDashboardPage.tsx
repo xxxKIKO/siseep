@@ -19,7 +19,8 @@ export function DirectorDashboardPage() {
         <p className="text-sm font-medium text-muted-foreground">Dirección</p>
         <h1 className="text-2xl font-semibold tracking-tight">Tablero de la escuela</h1>
         <p className="text-sm text-muted-foreground">
-          Hola{user ? `, ${user.firstName}` : ''}. Toca un grupo para ver su resumen.
+          Hola{user ? `, ${user.firstName}` : ''}. Toca un grupo para ver sus actividades, alumnos,
+          resumen y boletas.
         </p>
       </div>
       {dashboard.isLoading ? (
@@ -44,7 +45,7 @@ export function DirectorDashboardPage() {
 function GroupCard({ row }: { row: GroupOverview }) {
   const percent = row.capture?.percent ?? 0;
   return (
-    <Link to={`/director/grupos/${row.group.id}/resumen`} className="block h-full rounded-lg">
+    <Link to={`/director/grupos/${row.group.id}`} className="block h-full rounded-lg">
       <Card className="flex h-full flex-col gap-3 p-4 transition-colors hover:bg-muted/40">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

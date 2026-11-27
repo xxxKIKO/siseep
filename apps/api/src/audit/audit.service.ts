@@ -5,6 +5,7 @@ import type { ClientSession, Model, Types } from 'mongoose';
 import type { Actor } from '../common/request-user';
 import { oid, requireScopedQuery, teacherSummary } from '../common/scope';
 import { User } from '../users/user.schema';
+import { AuditDescriber } from './audit-describer';
 import { AuditLog } from './audit-log.schema';
 
 export interface AuditEntry {
@@ -25,7 +26,10 @@ type Person = { _id: Types.ObjectId; firstName: string; lastName?: string; email
  */
 @Injectable()
 export class AuditService {
-  constructor(@InjectModel(AuditLog.name) private readonly auditModel: Model<AuditLog>) {}
+  constructor(
+    @InjectModel(AuditLog.name) private readonly auditModel: Model<AuditLog>,
+    private readonly describer: AuditDescriber,
+  ) {}
 
   async record(actor: Actor, entries: AuditEntry[], session?: ClientSession): Promise<void> {
     if (entries.length === 0) return;
@@ -54,6 +58,7 @@ export class AuditService {
     if (query.entity) conditions.push({ entity: query.entity });
     if (query.entityId) conditions.push({ entityId: oid(query.entityId) });
     if (query.groupId) conditions.push({ groupId: oid(query.groupId) });
+    if (query.actorId) conditions.push({ actorId: oid(query.actorId) });
     if (query.from || query.to) {
       conditions.push({
         at: {
@@ -78,8 +83,18 @@ export class AuditService {
         .lean()
         .exec(),
     ]);
+    const { descriptions, groupNames } = await this.describer.describe(
+      rows.map((row) => ({
+        action: row.action,
+        entity: row.entity,
+        entityId: row.entityId as Types.ObjectId,
+        groupId: (row.groupId as Types.ObjectId | null) ?? null,
+        before: row.before,
+        after: row.after,
+      })),
+    );
     return {
-      items: rows.map((row) => ({
+      items: rows.map((row, i) => ({
         id: row._id.toString(),
         actor: row.actorId
           ? { id: row.actorId._id.toString(), name: teacherSummary(row.actorId).name }
@@ -87,7 +102,13 @@ export class AuditService {
         action: row.action,
         entity: row.entity,
         entityId: row.entityId.toString(),
-        ...(row.groupId ? { groupId: row.groupId.toString() } : {}),
+        ...(row.groupId
+          ? {
+              groupId: row.groupId.toString(),
+              groupName: groupNames.get(row.groupId.toString()) ?? '',
+            }
+          : {}),
+        description: descriptions[i] ?? '',
         before: row.before,
         after: row.after,
         at: row.at.toISOString(),

@@ -1,5 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { INVITATION_TYPES, type InvitationType, ROLES, type Role } from '@siseep/shared';
+import {
+  INVITATION_TYPES,
+  type InvitationType,
+  RELATIONSHIPS,
+  type Relationship,
+  ROLES,
+  type Role,
+} from '@siseep/shared';
 import type { HydratedDocument, Types } from 'mongoose';
 
 /** Sign-up invitation. STAFF uses an emailed link; GUARDIAN (stage 5) uses an 8-char code. */
@@ -20,6 +27,13 @@ export class Invitation {
   @Prop({ type: 'ObjectId', ref: 'Student' })
   studentId?: Types.ObjectId;
 
+  /** GUARDIAN: the student's group when the code was generated (scope of the teacher). */
+  @Prop({ type: 'ObjectId', ref: 'Group' })
+  groupId?: Types.ObjectId;
+
+  @Prop({ type: String, enum: RELATIONSHIPS })
+  relationship?: Relationship;
+
   @Prop({ type: [String], enum: ROLES, default: [] })
   roles!: Role[];
 
@@ -38,5 +52,6 @@ export class Invitation {
 
 export type InvitationDocument = HydratedDocument<Invitation>;
 export const InvitationSchema = SchemaFactory.createForClass(Invitation);
+InvitationSchema.index({ studentId: 1, usedAt: 1 });
 // Expired invitations are deleted by MongoDB.
 InvitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

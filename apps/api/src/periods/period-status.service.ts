@@ -59,6 +59,24 @@ export class PeriodStatusService {
     );
   }
 
+  /** Effective status of one group in many periods (guardian portal). */
+  async effectiveManyPeriods(periodIds: Id[], groupId: Id): Promise<Map<string, PeriodStatus>> {
+    const [periods, rows] = await Promise.all([
+      this.periodModel
+        .find({ _id: { $in: periodIds.map(oid) } }, { status: 1 })
+        .lean()
+        .exec(),
+      this.statusModel
+        .find({ periodId: { $in: periodIds.map(oid) }, groupId: oid(groupId) })
+        .lean()
+        .exec(),
+    ]);
+    const own = new Map(rows.map((r) => [r.periodId.toString(), r.status]));
+    return new Map(
+      periods.map((p) => [p._id.toString(), own.get(p._id.toString()) ?? p.status ?? 'OPEN']),
+    );
+  }
+
   /** Activities, grades, import. */
   async assertOpen(periodId: Id, groupId: Id, session?: ClientSession): Promise<void> {
     if ((await this.effective(periodId, groupId, session)) !== 'OPEN') throw Errors.periodNotOpen();

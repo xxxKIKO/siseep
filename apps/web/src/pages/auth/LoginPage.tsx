@@ -25,7 +25,23 @@ export function LoginPage() {
   const { errors } = form.formState;
 
   return (
-    <AuthLayout title="Iniciar sesión" description="Entra con el correo que registró la escuela.">
+    <AuthLayout
+      title="Iniciar sesión"
+      description="Entra con el correo que registró la escuela."
+      footer={
+        <span className="flex flex-col gap-2 text-muted-foreground">
+          <span>
+            ¿Eres mamá, papá o tutor y te dieron un código?{' '}
+            <Link to="/registro" className="font-medium text-primary underline">
+              Regístrate
+            </Link>
+          </span>
+          <Link to="/privacidad" className="underline">
+            Aviso de privacidad
+          </Link>
+        </span>
+      }
+    >
       <form
         noValidate
         className="flex flex-col gap-4"
